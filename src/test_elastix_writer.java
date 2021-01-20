@@ -37,6 +37,7 @@ public class test_elastix_writer {
             List<ViewRegistration> viewRegistrations = spimDataMinimal.getViewRegistrations().getViewRegistrationsOrdered();
             if (viewRegistrations.size() == 1) {
                 List<ViewTransform> viewTransforms = viewRegistrations.get(0).getTransformList();
+//                for (int i = 0; i<viewTransforms.size() - 1; i++) {
                 for (int i = 0; i<viewTransforms.size() - 1; i++) {
                     System.out.println(i);
                     totalTransform.concatenate( viewTransforms.get(i).asAffine3D() );
@@ -50,15 +51,20 @@ public class test_elastix_writer {
             e.printStackTrace();
         }
 
+//        AffineTransform3D totalTransform = new AffineTransform3D();
+//        xraySource.getSourceTransform(0, 0, totalTransform);
+
         BigWarpAffineToTransformixFileCommand bw = new BigWarpAffineToTransformixFileCommand();
 //        AffineTransform3D xrayTransform = new AffineTransform3D();
 //        xraySource.getSourceTransform(0, 0, xrayTransform);
 //        bw.affineTransformString = xrayTransform.toString();
         bw.affineTransformString = new AffineTransform3DToFlatString().convert(totalTransform).getString();
-        bw.affineTransformUnit = "microns";
+        bw.affineTransformUnit = "micrometer";
         bw.interpolation = ElastixTransform.FINAL_LINEAR_INTERPOLATOR;
         bw.transformationOutputFile = new File("Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\targeting_test\\elastix_flipped_xray_to_em\\initialTransform.txt");
         bw.targetImageFile = new File("Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\targeting_test\\elastix_flipped_xray_to_em\\065_9_high_res.tif");
         bw.run();
+
+        // recall elastix works in mm, so the spacing listed in the transform file will be in mm
     }
 }
