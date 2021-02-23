@@ -1,4 +1,3 @@
-import bdv.ij.BigWarpBdvCommand;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.tools.transformation.TransformedSource;
 import bdv.util.BdvFunctions;
@@ -11,7 +10,6 @@ import de.embl.cba.bdv.utils.sources.LazySpimSource;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
-import net.imglib2.realtransform.AffineTransform;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
@@ -25,7 +23,10 @@ public class big_warp {
     String pathToFixed = "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml";
     String pathToMoving = "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml";
     BigWarp bw;
-    BdvStackSource bdv;
+    BdvStackSource bdvFixed;
+    BdvStackSource bdvMoving;
+    TransformedSource<?> fixedSource;
+    TransformedSource<?> movingSource;
 
     public void run() {
         final LazySpimSource emSource = new LazySpimSource("em", pathToFixed);
@@ -55,15 +56,24 @@ public class big_warp {
         displayBigwarpTransform.setActionCommand("display_bigwarp");
         displayBigwarpTransform.addActionListener(generalListener);
 
+        JButton invertBigwarpTransform = new JButton("Invert Display");
+        invertBigwarpTransform.setActionCommand("invert_display");
+        invertBigwarpTransform.addActionListener(generalListener);
+
         content.add(openBigwarpButton);
         content.add(displayBigwarpTransform);
+        content.add(invertBigwarpTransform);
 
         testInterface.pack();
         testInterface.show();
 
-        bdv = BdvFunctions.show(emSource, 1);
-        BdvFunctions.show(xraySource, 1, BdvOptions.options().addTo( bdv ) );
-        bdv.setDisplayRange(0, 255);
+        bdvFixed = BdvFunctions.show(emSource, 1);
+        bdvMoving = BdvFunctions.show(xraySource, 1, BdvOptions.options().addTo(bdvFixed) );
+        fixedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvFixed.getSources().get(0)).getSpimSource();
+        movingSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvMoving.getSources().get(0)).getSpimSource();
+
+        bdvFixed.setDisplayRange(0, 255);
+        bdvMoving.setDisplayRange(0, 255);
 
 
 
@@ -112,7 +122,9 @@ public class big_warp {
                 openBigwarp();
             } else if (e.getActionCommand().equals("display_bigwarp")) {
                 displayBigwarp();
-            }
+            } else if (e.getActionCommand().equals("invert_display")) {
+            invert();
+        }
         }
     }
 
@@ -134,9 +146,25 @@ public class big_warp {
 
     private void displayBigwarp() {
         AffineTransform3D bigWarp = bw.affine3d();
-        TransformedSource< ? > source = (TransformedSource< ? >) ((SourceAndConverter< ? >) bdv.getSources().get(0)).getSpimSource();
-        source.setFixedTransform(bigWarp);
-        bdv.getBdvHandle().getViewerPanel().requestRepaint();
+        fixedSource.setFixedTransform(bigWarp);
+
+        AffineTransform3D identity = new AffineTransform3D();
+        identity.identity();
+        movingSource.setFixedTransform(identity);
+        bdvFixed.getBdvHandle().getViewerPanel().requestRepaint();
+    }
+
+    private void invert() {
+        // AffineTransform3D bigWarp = bw.affine3d();
+        // bigWarp.inverse();
+        AffineTransform3D bigWarp = bw.getMovingToFixedTransformAsAffineTransform3D();
+        movingSource.setFixedTransform(bigWarp);
+
+        AffineTransform3D identity = new AffineTransform3D();
+        identity.identity();
+        fixedSource.setFixedTransform(identity);
+        bdvMoving.getBdvHandle().getViewerPanel().requestRepaint();
+    }
 
 
 
@@ -147,8 +175,6 @@ public class big_warp {
         // affinetransform2d or affinetransform3d
         // bw.affine()
         // AffineTransform3D transform = bw.affine3d();
-        //
-    }
 
     public static void main( String[] args )
     {
