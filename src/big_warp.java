@@ -1,4 +1,7 @@
 import bdv.ij.util.ProgressWriterIJ;
+import bdv.tools.boundingbox.BoxSelectionOptions;
+import de.embl.cba.bdp2.boundingbox.BoundingBoxDialog;
+import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.transformation.TransformedSource;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvOptions;
@@ -6,11 +9,14 @@ import bdv.util.BdvStackSource;
 import bdv.viewer.SourceAndConverter;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
+import de.embl.cba.bdv.utils.BdvUtils;
 import de.embl.cba.bdv.utils.sources.LazySpimSource;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
+import net.imglib2.FinalRealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
 import javax.swing.*;
@@ -27,13 +33,16 @@ public class big_warp {
     BdvStackSource bdvMoving;
     TransformedSource<?> fixedSource;
     TransformedSource<?> movingSource;
+    double[] fixedDimensions;
+    double[] movingDimensions;
 
     public void run() {
         final LazySpimSource emSource = new LazySpimSource("em", pathToFixed);
 //        final LazySpimSource xraySource = new LazySpimSource("xray", "Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\original_hdf5\\high_res_flip_z_bigwarped.xml");
         final LazySpimSource xraySource = new LazySpimSource("xray", pathToMoving);
 
-
+        fixedDimensions = new double[3];
+        movingDimensions = new double[3];
 
         // Allows opening of hdf5 images in big warp
         // BigWarpBdvCommand bwcommand = new BigWarpBdvCommand();
@@ -60,9 +69,14 @@ public class big_warp {
         invertBigwarpTransform.setActionCommand("invert_display");
         invertBigwarpTransform.addActionListener(generalListener);
 
+        JButton cropDialogB = new JButton("crop");
+        cropDialogB.setActionCommand("crop_dialog");
+        cropDialogB.addActionListener(generalListener);
+
         content.add(openBigwarpButton);
         content.add(displayBigwarpTransform);
         content.add(invertBigwarpTransform);
+        content.add(cropDialogB);
 
         testInterface.pack();
         testInterface.show();
@@ -74,6 +88,11 @@ public class big_warp {
 
         bdvFixed.setDisplayRange(0, 255);
         bdvMoving.setDisplayRange(0, 255);
+
+
+
+        emSource.getVoxelDimensions().dimensions(fixedDimensions);
+        xraySource.getVoxelDimensions().dimensions(movingDimensions);
 
 
 
@@ -124,7 +143,10 @@ public class big_warp {
                 displayBigwarp();
             } else if (e.getActionCommand().equals("invert_display")) {
             invert();
-        }
+            } else if (e.getActionCommand().equals("crop_dialog")) {
+                new Thread( () -> {
+                    cropDialog();  } ).start();
+            }
         }
     }
 
@@ -165,6 +187,114 @@ public class big_warp {
         fixedSource.setFixedTransform(identity);
         bdvMoving.getBdvHandle().getViewerPanel().requestRepaint();
     }
+
+    private TransformedBoxSelectionDialog.Result cropDialog() {
+
+
+        final AffineTransform3D boxTransform = new AffineTransform3D();
+        boxTransform.set( fixedDimensions[0], 0,0  );
+        boxTransform.set( fixedDimensions[1], 1,1  );
+        boxTransform.set( fixedDimensions[2], 2,2  );
+
+
+        return BdvFunctions.selectBox(
+                bdvFixed,
+                boxTransform,
+                Intervals.createMinMax(10,10,10,100,100,100),
+                Intervals.createMinMax(0,0,0,200,200,200),
+                BoxSelectionOptions.options()
+                        .title( "select crop" )
+        );
+    }
+
+    // private void setInitialInterval( boolean calibrated )
+    // {
+    //     final FinalRealInterval viewerBoundingInterval = BdvUtils.getViewerGlobalBoundingInterval( bdvFixed.getBdvHandle() );
+    //     double[] initialCenter = new double[ 3 ];
+    //     double[] initialSize = new double[ 3 ];
+    //
+    //     for (int d = 0; d < 3; d++)
+    //     {
+    //         initialCenter[ d ] = ( viewerBoundingInterval.realMax( d ) + viewerBoundingInterval.realMin( d ) ) / 2.0;
+    //         initialSize[ d ] = ( viewerBoundingInterval.realMax( d ) - viewerBoundingInterval.realMin( d ) ) / 2.0;
+    //
+    //         if ( ! calibrated )
+    //         {
+    //             initialCenter[ d ] /= image.getVoxelDimensions()[ d ];
+    //             initialSize[ d ] /= image.getVoxelDimensions()[ d ];
+    //         }
+    //     }
+    //
+    //     // TODO: improve this: take whole range in the smaller direction (up or down..)
+    //     initialSize[ DimensionOrder.Z ] = image.getRai().dimension( DimensionOrder.Z ) / 10;
+    //
+    //     if ( calibrated )
+    //         initialSize[ DimensionOrder.Z ] *= image.getVoxelDimensions()[ DimensionOrder.Z ];
+    //
+    //     initialSize[ DimensionOrder.Z ] = (int) Math.max( initialSize[ DimensionOrder.Z ],
+    //             Math.ceil( image.getVoxelDimensions()[ DimensionOrder.Z ] ) );
+    //
+    //     double[] minBB = new double[]{
+    //             initialCenter[ X ] - initialSize[ X ] / 2,
+    //             initialCenter[ Y ] - initialSize[ Y ] / 2,
+    //             initialCenter[ Z ] - initialSize[ Z ] / 2 };
+    //
+    //     double[] maxBB = new double[]{
+    //             initialCenter[ X ] + initialSize[ X ] / 2,
+    //             initialCenter[ Y ] + initialSize[ Y ] / 2,
+    //             initialCenter[ Z ] + initialSize[ Z ] / 2 };
+    //
+    //     initialInterval = Intervals.createMinMax(
+    //             (long) minBB[X], (long) minBB[Y], (long) minBB[Z],
+    //             (long) maxBB[X], (long) maxBB[Y], (long) maxBB[Z]);
+    // }
+    //
+    // private void setRangeInterval( boolean calibrated )
+    // {
+    //     min = new int[ 4 ];
+    //     max = new int[ 4 ];
+    //
+    //     setRangeXYZ( image, calibrated );
+    //     setRangeT( image );
+    //
+    //     rangeInterval = Intervals.createMinMax(
+    //             min[X], min[Y], min[Z],
+    //             max[X], max[Y], max[Z]);
+    // }
+    //
+    // private void setRangeT( Image< R > image )
+    // {
+    //     min[T] = (int) image.getRai().min( DimensionOrder.T );
+    //     max[T] = (int) image.getRai().max( DimensionOrder.T );
+    // }
+    //
+    // private void setRangeXYZ( Image< R > image, boolean calibrated )
+    // {
+    //     for (int d = 0; d < 3; d++)
+    //     {
+    //         min[ d ] = (int) ( image.getRai().min( d ) );
+    //         max[ d ] = (int) ( image.getRai().max( d ) );
+    //
+    //         if ( calibrated )
+    //         {
+    //             min[ d ] *= image.getVoxelDimensions()[ d ];
+    //             max[ d ] *= image.getVoxelDimensions()[ d ];
+    //         }
+    //     }
+    // }
+
+    // from big data processor
+    // public FinalInterval getVoxelIntervalXYZCTViaDialog( )
+    // {
+    //     BoundingBoxDialog boundingBoxDialog = new BoundingBoxDialog( bdvFixed.getBdvHandle(), image );
+    //     boundingBoxDialog.showVoxelBoxAndWaitForResult();
+    //     return boundingBoxDialog.getVoxelSelectionInterval();
+    //
+    //     TransformedBoxSelectionDialog crop = new TransformedBoxSelectionDialog()
+    //     BoundingBoxDialog boundingBoxDialog = new BoundingBoxDialog( bdvFixed.getBdvHandle(), image );
+    //     boundingBoxDialog.showVoxelBoxAndWaitForResult();
+    //     return boundingBoxDialog.getVoxelSelectionInterval();
+    // }
 
 
 
