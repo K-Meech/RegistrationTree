@@ -1,5 +1,7 @@
+import bdv.export.ProgressWriter;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.tools.boundingbox.BoxSelectionOptions;
+import bdv.viewer.Interpolation;
 import de.embl.cba.bdp2.boundingbox.BoundingBoxDialog;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.transformation.TransformedSource;
@@ -10,11 +12,14 @@ import bdv.viewer.SourceAndConverter;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
 import de.embl.cba.bdv.utils.BdvUtils;
+import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
+import de.embl.cba.bdv.utils.io.ProgressWriterBdv;
 import de.embl.cba.bdv.utils.sources.LazySpimSource;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
 import net.imglib2.FinalRealInterval;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
@@ -23,6 +28,9 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
+
+import static bdv.viewer.Interpolation.NLINEAR;
 
 public class big_warp {
 
@@ -37,9 +45,19 @@ public class big_warp {
     double[] movingDimensions;
 
     public void run() {
-        final LazySpimSource emSource = new LazySpimSource("em", pathToFixed);
-//        final LazySpimSource xraySource = new LazySpimSource("xray", "Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\original_hdf5\\high_res_flip_z_bigwarped.xml");
-        final LazySpimSource xraySource = new LazySpimSource("xray", pathToMoving);
+
+        SpimData xraySource = null;
+        SpimData emSource = null;
+        try {
+            emSource = new XmlIoSpimData().load(pathToFixed);
+            xraySource = new XmlIoSpimData().load(pathToMoving);
+        } catch (SpimDataException e) {
+            e.printStackTrace();
+        }
+
+//         final LazySpimSource emSource = new LazySpimSource("em", pathToFixed);
+// //        final LazySpimSource xraySource = new LazySpimSource("xray", "Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\original_hdf5\\high_res_flip_z_bigwarped.xml");
+//         final LazySpimSource xraySource = new LazySpimSource("xray", pathToMoving);
 
         fixedDimensions = new double[3];
         movingDimensions = new double[3];
@@ -81,18 +99,21 @@ public class big_warp {
         testInterface.pack();
         testInterface.show();
 
-        bdvFixed = BdvFunctions.show(emSource, 1);
-        bdvMoving = BdvFunctions.show(xraySource, 1, BdvOptions.options().addTo(bdvFixed) );
+        bdvFixed = BdvFunctions.show(emSource).get(0);
+        bdvMoving = BdvFunctions.show(xraySource, BdvOptions.options().addTo(bdvFixed) ).get(0);
         fixedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvFixed.getSources().get(0)).getSpimSource();
         movingSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvMoving.getSources().get(0)).getSpimSource();
 
         bdvFixed.setDisplayRange(0, 255);
         bdvMoving.setDisplayRange(0, 255);
 
+        emSource.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(fixedDimensions);
+        xraySource.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(movingDimensions);
 
 
-        emSource.getVoxelDimensions().dimensions(fixedDimensions);
-        xraySource.getVoxelDimensions().dimensions(movingDimensions);
+        // emSource.getSequenceDescription().get
+        // emSource.getVoxelDimensions().dimensions(fixedDimensions);
+        // xraySource.getVoxelDimensions().dimensions(movingDimensions);
 
 
 
@@ -145,7 +166,20 @@ public class big_warp {
             invert();
             } else if (e.getActionCommand().equals("crop_dialog")) {
                 new Thread( () -> {
-                    cropDialog();  } ).start();
+                    TransformedBoxSelectionDialog.Result result = cropDialog();
+                    RandomAccessibleInterval rai = fixedSource.getSource(0, 0);
+                    // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
+                    // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
+                    ArrayList<Integer> sourceIndices = new ArrayList<>();
+                    sourceIndices.add(0);
+                    double[] outputVoxelSpacings = new double[] {1,1,1};
+                    BdvRealSourceToVoxelImageExporter bdvExport = new BdvRealSourceToVoxelImageExporter<>(bdvFixed.getBdvHandle(),
+                            sourceIndices, result.getInterval(), 0, 0,
+                            NLINEAR, outputVoxelSpacings, BdvRealSourceToVoxelImageExporter.ExportModality.SaveAsTiffVolumes,
+                            BdvRealSourceToVoxelImageExporter.ExportDataType.UnsignedByte, Runtime.getRuntime().availableProcessors(), new ProgressWriterIJ());
+                    bdvExport.setOutputDirectory("C:\\Users\\meechan\\Documents\\temp\\exportTest");
+                    bdvExport.export();
+                } ).start();
             }
         }
     }
@@ -188,6 +222,7 @@ public class big_warp {
         bdvMoving.getBdvHandle().getViewerPanel().requestRepaint();
     }
 
+    // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
     private TransformedBoxSelectionDialog.Result cropDialog() {
 
 
