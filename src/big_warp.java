@@ -292,11 +292,13 @@ public class big_warp {
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
 
-        ImagePlus imp = ImageJFunctions.wrap( crop, "towrite" );
+        // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
+        // sensibly or just clip?
+        ImagePlus imp = ImageJFunctions.wrapUnsignedByte( crop, "towrite" );
         System.out.println(imp.getBitDepth());
         MetaImage_Writer writer = new MetaImage_Writer();
         String directory = "C:\\Users\\meechan\\Documents\\temp\\";
-        String filenameWithExtension = "test-TODAY.mhd";
+        String filenameWithExtension = "test-" + level + "TODAY.mhd";
         writer.save( imp, directory, filenameWithExtension );
     }
 
