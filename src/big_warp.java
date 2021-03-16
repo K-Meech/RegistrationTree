@@ -14,9 +14,11 @@ import bdv.viewer.SourceAndConverter;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
 import de.embl.cba.bdv.utils.BdvUtils;
-import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
+// import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
 import de.embl.cba.bdv.utils.io.ProgressWriterBdv;
 import de.embl.cba.bdv.utils.sources.LazySpimSource;
+import de.embl.cba.metaimage_io.MetaImage_Writer;
+import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import itc.commands.BigWarpAffineToTransformixFileCommand;
 import itc.converters.AffineTransform3DToFlatString;
@@ -27,8 +29,10 @@ import mpicbg.spim.data.XmlIoSpimData;
 import mpicbg.spim.data.sequence.XmlIoSequenceDescription;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 import org.apache.commons.compress.utils.FileNameUtils;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
@@ -38,6 +42,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 
 import static bdv.viewer.Interpolation.NLINEAR;
 
@@ -245,22 +250,37 @@ public class big_warp {
     private void writeCrop( TransformedBoxSelectionDialog.Result result, int sourceIndex ) {
         // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
         // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
-        ArrayList<Integer> sourceIndices = new ArrayList<>();
-        sourceIndices.add(sourceIndex);
-        double[] outputVoxelSpacings = new double[] {1,1,1};
-        BdvRealSourceToVoxelImageExporter bdvExport = new BdvRealSourceToVoxelImageExporter<>(bdv,
-                sourceIndices, result.getInterval(), 0, 0,
-                NLINEAR, outputVoxelSpacings, BdvRealSourceToVoxelImageExporter.ExportModality.SaveAsMhdVolumes,
-                BdvRealSourceToVoxelImageExporter.ExportDataType.UnsignedByte, Runtime.getRuntime().availableProcessors(), new ProgressWriterIJ());
-        bdvExport.setOutputDirectory(tempDir);
 
-        ArrayList<String> names = new ArrayList<>();
-        for ( int index: sourceIndices ) {
-            names.add(sourceNames.get(index));
-        }
+        List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
+        RandomAccessibleInterval rai = sources.get( sourceIndex ).getSpimSource().getSource( 0, 0);
+        RandomAccessibleInterval crop =
+                Views.interval( rai, result.getInterval() );
 
-        bdvExport.setSourceNames(names);
-        bdvExport.export();
+        ImagePlus imp = ImageJFunctions.wrap( crop, "towrite" );
+        System.out.println(imp.getBitDepth());
+        MetaImage_Writer writer = new MetaImage_Writer();
+        String directory = "C:\\Users\\meechan\\Documents\\temp\\";
+        String filenameWithExtension = "test-TODAY.mhd";
+        writer.save( imp, directory, filenameWithExtension );
+
+
+
+        // ArrayList<Integer> sourceIndices = new ArrayList<>();
+        // sourceIndices.add(sourceIndex);
+        // double[] outputVoxelSpacings = new double[] {1,1,1};
+        // BdvRealSourceToVoxelImageExporter bdvExport = new BdvRealSourceToVoxelImageExporter<>(bdv,
+        //         sourceIndices, result.getInterval(), 0, 0,
+        //         NLINEAR, outputVoxelSpacings, BdvRealSourceToVoxelImageExporter.ExportModality.SaveAsMhdVolumes,
+        //         BdvRealSourceToVoxelImageExporter.ExportDataType.UnsignedByte, Runtime.getRuntime().availableProcessors(), new ProgressWriterIJ());
+        // bdvExport.setOutputDirectory(tempDir);
+        //
+        // ArrayList<String> names = new ArrayList<>();
+        // for ( int index: sourceIndices ) {
+        //     names.add(sourceNames.get(index));
+        // }
+        //
+        // bdvExport.setSourceNames(names);
+        // bdvExport.export();
     }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
