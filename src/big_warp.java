@@ -2,6 +2,7 @@ import bdv.export.ProgressWriter;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.boundingbox.BoxSelectionOptions;
+import bdv.tools.boundingbox.TransformedRealBoxSelectionDialog;
 import bdv.util.BdvHandle;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
@@ -29,6 +30,7 @@ import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
 import mpicbg.spim.data.sequence.XmlIoSequenceDescription;
 import net.imglib2.FinalRealInterval;
+import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -164,9 +166,19 @@ public class big_warp {
         }
     }
 
-    private double[] getSourceDimensions( int sourceIndex ) {
+    private double[] getSourceVoxelSize( int sourceIndex ) {
         double[] sourceDimensions = new double[3];
         spimSources.get(sourceIndex).getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(sourceDimensions);
+        return sourceDimensions;
+    }
+
+    private String getSourceUnit( int sourceIndex ) {
+        return spimSources.get(sourceIndex).getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().unit();
+    }
+
+    private long[] getSourceVoxelDimensions( int sourceIndex ) {
+        long[] sourceDimensions = new long[3];
+        spimSources.get(sourceIndex).getSequenceDescription().getViewSetupsOrdered().get(0).getSize().dimensions(sourceDimensions);
         return sourceDimensions;
     }
 
@@ -190,7 +202,7 @@ public class big_warp {
 
                     if ( !gd.wasCanceled() ) {
                         int sourceIndex = gd.getNextChoiceIndex();
-                        TransformedBoxSelectionDialog.Result result = cropDialog( sourceIndex );
+                        TransformedRealBoxSelectionDialog.Result result = cropDialog( sourceIndex );
                         writeCrop( result, sourceIndex );
                     }
                 } ).start();
@@ -221,7 +233,7 @@ public class big_warp {
         }
     }
 
-    private void writeCrop( TransformedBoxSelectionDialog.Result result, int sourceIndex ) {
+    private void writeCrop( TransformedRealBoxSelectionDialog.Result result, int sourceIndex ) {
         // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
         // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
 
@@ -229,15 +241,20 @@ public class big_warp {
         int level = chooseSourceLevel( sourceIndex );
         // TODO - warn that time series are not supported
         RandomAccessibleInterval rai = sources.get( sourceIndex ).getSpimSource().getSource( 0, level);
-        RandomAccessibleInterval crop =
-                Views.interval( rai, result.getInterval() );
-
-        ImagePlus imp = ImageJFunctions.wrap( crop, "towrite" );
-        System.out.println(imp.getBitDepth());
-        MetaImage_Writer writer = new MetaImage_Writer();
-        String directory = "C:\\Users\\meechan\\Documents\\temp\\";
-        String filenameWithExtension = "test-TODAY.mhd";
-        writer.save( imp, directory, filenameWithExtension );
+        // TODO - snap real interval to nearest actual voxel? To avoid interpolation?
+        // TODO - can we move this bdp function to imagej-utils?
+        // does this round? or clip?
+        // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
+        // i.e. get voxel size at that level, and use it to get a voxel interval
+        // RandomAccessibleInterval crop =
+        //         Views.interval( rai, result.getInterval() );
+        //
+        // ImagePlus imp = ImageJFunctions.wrap( crop, "towrite" );
+        // System.out.println(imp.getBitDepth());
+        // MetaImage_Writer writer = new MetaImage_Writer();
+        // String directory = "C:\\Users\\meechan\\Documents\\temp\\";
+        // String filenameWithExtension = "test-TODAY.mhd";
+        // writer.save( imp, directory, filenameWithExtension );
     }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
@@ -310,110 +327,53 @@ public class big_warp {
         bdv.getViewerPanel().requestRepaint();
     }
 
-    // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
-    private TransformedBoxSelectionDialog.Result cropDialog( int sourceIndex ) {
+    private FinalRealInterval getRangeInterval(int sourceIndex )
+    {
+        double[] max = new double[ 3 ];
 
+        long[] sourceVoxelDimensions = getSourceVoxelDimensions( sourceIndex );
+        double[] sourceVoxelSize = getSourceVoxelSize( sourceIndex );
+        for ( int i = 0; i < sourceVoxelSize.length; i++ ) {
+            max[i] = sourceVoxelDimensions[i] * sourceVoxelSize[i];
+        }
+        return Intervals.createMinMaxReal(
+                0, 0, 0,
+                max[0], max[1], max[2]);
+    }
+
+    // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
+    // TODO - y dim seems integer??
+    private TransformedRealBoxSelectionDialog.Result cropDialog(int sourceIndex ) {
+
+        // https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java
+        //https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L58
+
+        // based on calbirated real box stuff here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/boundingbox/BoundingBoxDialog.java#L144
         final AffineTransform3D boxTransform = new AffineTransform3D();
         transformedSources.get(sourceIndex).getFixedTransform(boxTransform);
 
-        return BdvFunctions.selectBox(
+        // set sensible initial intervals
+        FinalRealInterval rangeInterval = getRangeInterval( sourceIndex );
+        FinalRealInterval initialInterval = Intervals.createMinMaxReal( 0, 0, 0,
+                rangeInterval.realMax(0)/2,
+                rangeInterval.realMax(1)/2,
+                rangeInterval.realMax(2)/2);
+
+        TransformedRealBoxSelectionDialog.Result result =  BdvFunctions.selectRealBox(
                 bdv,
                 boxTransform,
-                Intervals.createMinMax(10,10,10,100,100,100),
-                Intervals.createMinMax(0,0,0,200,200,200),
+                initialInterval,
+                rangeInterval,
                 BoxSelectionOptions.options()
-                        .title( "select crop" )
+                        .title( "Units: " + getSourceUnit( sourceIndex ) )
         );
+
+        if ( result.isValid() ) {
+            return result;
+        } else {
+            return null;
+        }
     }
-
-    // private void setInitialInterval( boolean calibrated )
-    // {
-    //     final FinalRealInterval viewerBoundingInterval = BdvUtils.getViewerGlobalBoundingInterval( bdvFixed.getBdvHandle() );
-    //     double[] initialCenter = new double[ 3 ];
-    //     double[] initialSize = new double[ 3 ];
-    //
-    //     for (int d = 0; d < 3; d++)
-    //     {
-    //         initialCenter[ d ] = ( viewerBoundingInterval.realMax( d ) + viewerBoundingInterval.realMin( d ) ) / 2.0;
-    //         initialSize[ d ] = ( viewerBoundingInterval.realMax( d ) - viewerBoundingInterval.realMin( d ) ) / 2.0;
-    //
-    //         if ( ! calibrated )
-    //         {
-    //             initialCenter[ d ] /= image.getVoxelDimensions()[ d ];
-    //             initialSize[ d ] /= image.getVoxelDimensions()[ d ];
-    //         }
-    //     }
-    //
-    //     // TODO: improve this: take whole range in the smaller direction (up or down..)
-    //     initialSize[ DimensionOrder.Z ] = image.getRai().dimension( DimensionOrder.Z ) / 10;
-    //
-    //     if ( calibrated )
-    //         initialSize[ DimensionOrder.Z ] *= image.getVoxelDimensions()[ DimensionOrder.Z ];
-    //
-    //     initialSize[ DimensionOrder.Z ] = (int) Math.max( initialSize[ DimensionOrder.Z ],
-    //             Math.ceil( image.getVoxelDimensions()[ DimensionOrder.Z ] ) );
-    //
-    //     double[] minBB = new double[]{
-    //             initialCenter[ X ] - initialSize[ X ] / 2,
-    //             initialCenter[ Y ] - initialSize[ Y ] / 2,
-    //             initialCenter[ Z ] - initialSize[ Z ] / 2 };
-    //
-    //     double[] maxBB = new double[]{
-    //             initialCenter[ X ] + initialSize[ X ] / 2,
-    //             initialCenter[ Y ] + initialSize[ Y ] / 2,
-    //             initialCenter[ Z ] + initialSize[ Z ] / 2 };
-    //
-    //     initialInterval = Intervals.createMinMax(
-    //             (long) minBB[X], (long) minBB[Y], (long) minBB[Z],
-    //             (long) maxBB[X], (long) maxBB[Y], (long) maxBB[Z]);
-    // }
-    //
-    // private void setRangeInterval( boolean calibrated )
-    // {
-    //     min = new int[ 4 ];
-    //     max = new int[ 4 ];
-    //
-    //     setRangeXYZ( image, calibrated );
-    //     setRangeT( image );
-    //
-    //     rangeInterval = Intervals.createMinMax(
-    //             min[X], min[Y], min[Z],
-    //             max[X], max[Y], max[Z]);
-    // }
-    //
-    // private void setRangeT( Image< R > image )
-    // {
-    //     min[T] = (int) image.getRai().min( DimensionOrder.T );
-    //     max[T] = (int) image.getRai().max( DimensionOrder.T );
-    // }
-    //
-    // private void setRangeXYZ( Image< R > image, boolean calibrated )
-    // {
-    //     for (int d = 0; d < 3; d++)
-    //     {
-    //         min[ d ] = (int) ( image.getRai().min( d ) );
-    //         max[ d ] = (int) ( image.getRai().max( d ) );
-    //
-    //         if ( calibrated )
-    //         {
-    //             min[ d ] *= image.getVoxelDimensions()[ d ];
-    //             max[ d ] *= image.getVoxelDimensions()[ d ];
-    //         }
-    //     }
-    // }
-
-    // from big data processor
-    // public FinalInterval getVoxelIntervalXYZCTViaDialog( )
-    // {
-    //     BoundingBoxDialog boundingBoxDialog = new BoundingBoxDialog( bdvFixed.getBdvHandle(), image );
-    //     boundingBoxDialog.showVoxelBoxAndWaitForResult();
-    //     return boundingBoxDialog.getVoxelSelectionInterval();
-    //
-    //     TransformedBoxSelectionDialog crop = new TransformedBoxSelectionDialog()
-    //     BoundingBoxDialog boundingBoxDialog = new BoundingBoxDialog( bdvFixed.getBdvHandle(), image );
-    //     boundingBoxDialog.showVoxelBoxAndWaitForResult();
-    //     return boundingBoxDialog.getVoxelSelectionInterval();
-    // }
 
 
 
