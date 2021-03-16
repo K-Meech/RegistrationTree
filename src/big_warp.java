@@ -29,9 +29,7 @@ import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
 import mpicbg.spim.data.sequence.XmlIoSequenceDescription;
-import net.imglib2.FinalRealInterval;
-import net.imglib2.Interval;
-import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.*;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
@@ -49,10 +47,14 @@ import java.util.List;
 
 import static bdv.viewer.Interpolation.NLINEAR;
 
+// TODO - is soruce index consistent
+
 public class big_warp {
 
+    // String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
+    //         "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
     String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
-            "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
+            "C:\\Users\\meechan\\Documents\\sample_register_images\\zebra.xml" };
     ArrayList<SpimData> spimSources = new ArrayList<>();
     ArrayList<String> sourceNames = new ArrayList<>();
     ArrayList<TransformedSource<?>> transformedSources = new ArrayList<>();
@@ -177,9 +179,16 @@ public class big_warp {
     }
 
     private long[] getSourceVoxelDimensions( int sourceIndex ) {
-        long[] sourceDimensions = new long[3];
-        spimSources.get(sourceIndex).getSequenceDescription().getViewSetupsOrdered().get(0).getSize().dimensions(sourceDimensions);
-        return sourceDimensions;
+        return getSourceVoxelDimensionsAtLevel( sourceIndex, 0 );
+    }
+
+    private long[] getSourceVoxelDimensionsAtLevel( int sourceIndex, int level ) {
+        List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
+        Source spimSource = sources.get( sourceIndex ).getSpimSource();
+
+        long[] dimensions = new long[3];
+        spimSource.getSource( 0, level ).dimensions( dimensions );
+        return dimensions;
     }
 
     class GeneralListener implements ActionListener {
@@ -233,6 +242,39 @@ public class big_warp {
         }
     }
 
+    private double[] getVoxelSizeAtLevel( int sourceIndex, int level ) {
+        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( sourceIndex );
+        double[] fullResolutionVoxelSize = getSourceVoxelSize( sourceIndex );
+
+        if ( level == 0 ) {
+            return fullResolutionVoxelSize;
+        } else {
+            long[] downsampledResolutionVoxelDimensions = getSourceVoxelDimensionsAtLevel( sourceIndex, level );
+            double[] downsampledResolutionVoxelSize = new double[3];
+            for ( int i = 0; i< fullResolutionVoxelDimensions.length; i++ ) {
+                downsampledResolutionVoxelSize[i] = fullResolutionVoxelSize[i] *
+                        ( (double) fullResolutionVoxelDimensions[i] / (double) downsampledResolutionVoxelDimensions[i] );
+            }
+            return downsampledResolutionVoxelSize;
+        }
+    }
+
+    public static Interval toVoxelInterval(
+            RealInterval interval,
+            double[] voxelSize )
+    {
+        final long[] min = new long[ 3 ];
+        final long[] max = new long[ 3 ];
+
+        for ( int d = 0; d < 3; d++ )
+        {
+            min[ d ] = Math.round( interval.realMin( d ) / voxelSize[ d ] );
+            max[ d ] = Math.round( interval.realMax( d ) / voxelSize[ d ] );
+        }
+
+        return new FinalInterval( min, max );
+    }
+
     private void writeCrop( TransformedRealBoxSelectionDialog.Result result, int sourceIndex ) {
         // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
         // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
@@ -241,20 +283,21 @@ public class big_warp {
         int level = chooseSourceLevel( sourceIndex );
         // TODO - warn that time series are not supported
         RandomAccessibleInterval rai = sources.get( sourceIndex ).getSpimSource().getSource( 0, level);
-        // TODO - snap real interval to nearest actual voxel? To avoid interpolation?
-        // TODO - can we move this bdp function to imagej-utils?
-        // does this round? or clip?
+
         // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
         // i.e. get voxel size at that level, and use it to get a voxel interval
-        // RandomAccessibleInterval crop =
-        //         Views.interval( rai, result.getInterval() );
-        //
-        // ImagePlus imp = ImageJFunctions.wrap( crop, "towrite" );
-        // System.out.println(imp.getBitDepth());
-        // MetaImage_Writer writer = new MetaImage_Writer();
-        // String directory = "C:\\Users\\meechan\\Documents\\temp\\";
-        // String filenameWithExtension = "test-TODAY.mhd";
-        // writer.save( imp, directory, filenameWithExtension );
+        double[] downsampledVoxelSize = getVoxelSizeAtLevel( sourceIndex, level );
+        Interval voxelCropInterval = toVoxelInterval( result.getInterval(), downsampledVoxelSize );
+
+        RandomAccessibleInterval crop =
+                Views.interval( rai, voxelCropInterval );
+
+        ImagePlus imp = ImageJFunctions.wrap( crop, "towrite" );
+        System.out.println(imp.getBitDepth());
+        MetaImage_Writer writer = new MetaImage_Writer();
+        String directory = "C:\\Users\\meechan\\Documents\\temp\\";
+        String filenameWithExtension = "test-TODAY.mhd";
+        writer.save( imp, directory, filenameWithExtension );
     }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
