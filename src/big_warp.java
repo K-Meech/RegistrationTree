@@ -4,6 +4,7 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.util.BdvHandle;
 import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
 import de.embl.cba.bdp2.boundingbox.BoundingBoxDialog;
 import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.transformation.TransformedSource;
@@ -54,23 +55,12 @@ public class big_warp {
     ArrayList<String> sourceNames = new ArrayList<>();
     ArrayList<TransformedSource<?>> transformedSources = new ArrayList<>();
 
-    int fixedSourceIndex;
-    int movingSourceIndex;
-
-    String pathToFixed = "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml";
-    String pathToMoving = "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml";
     String tempDir = "C:\\Users\\meechan\\Documents\\temp\\exportTest";
 
     BdvHandle bdv;
     BigWarp bw;
-    BdvStackSource bdvFixed;
-    BdvStackSource bdvMoving;
-    TransformedSource<?> fixedSource;
-    TransformedSource<?> movingSource;
-    double[] fixedDimensions;
-    double[] movingDimensions;
-    TransformedBoxSelectionDialog.Result resultFixed;
-    TransformedBoxSelectionDialog.Result resultMoving;
+    int fixedSourceIndex;
+    int movingSourceIndex;
 
     public void run() {
 
@@ -79,9 +69,6 @@ public class big_warp {
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
-
-        fixedSourceIndex = 0;
-        movingSourceIndex = 1;
 
         // TODO - set names of sources to be root of filename?
 
@@ -129,42 +116,9 @@ public class big_warp {
         testInterface.pack();
         testInterface.show();
 
-        // bdvFixed = BdvFunctions.show(source1).get(0);
-        // bdvMoving = BdvFunctions.show(source2, BdvOptions.options().addTo(bdvFixed) ).get(0);
-        //
-        // bdvFixed.set
-        //
-        //
-        // fixedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvFixed.getSources().get(0)).getSpimSource();
-        // movingSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvMoving.getSources().get(0)).getSpimSource();
-        //
-        // bdvFixed.setDisplayRange(0, 255);
-        // bdvMoving.setDisplayRange(0, 255);
-        //
-        // source1.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(fixedDimensions);
-        // source2.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(movingDimensions);
-
-
-        // emSource.getSequenceDescription().get
-        // emSource.getVoxelDimensions().dimensions(fixedDimensions);
-        // xraySource.getVoxelDimensions().dimensions(movingDimensions);
-
-
-
-
-
-        // final TransformedSource< ? > movingSource = new TransformedSource<>( movingSpimData );
-
-        // fixed transform
-        // final TransformedSource< ? > source = ( TransformedSource< ? > ) bdvStackSource.getSources().get( 0 );
-        // source.setFixedTransform( transform );
-
-
 
         // minor goal
         // crop in micron coords both images, always in their own image space - remember the values
-
-
 
 
         // open bigwarp programatically, have them save their landmarks then exit.
@@ -247,12 +201,34 @@ public class big_warp {
     // saving to mhd - https://github.com/embl-cba/elastixWrapper/blob/edb37861b497747217a8e9dd9e579fd8d8a325bb/src/main/java/de/embl/cba/elastixwrapper/elastix/ElastixWrapper.java#L479
     // save to mhd AND enable choosing of name
 
+    private int chooseSourceLevel( int sourceIndex ) throws RuntimeException {
+        final GenericDialog gd = new GenericDialog( "Choose resolution level..." );
+        List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
+        Source source = sources.get( sourceIndex ).getSpimSource();
+        int numLevels = source.getNumMipmapLevels();
+
+        String[] resolutionLevels = new String[numLevels];
+        for ( int i = 0; i < numLevels; i++ ) {
+            resolutionLevels[i] = Integer.toString( i );
+        }
+        gd.addChoice("Level:", resolutionLevels, resolutionLevels[0]);
+        gd.showDialog();
+
+        if ( !gd.wasCanceled() ) {
+            return gd.getNextChoiceIndex();
+        } else {
+            throw new RuntimeException();
+        }
+    }
+
     private void writeCrop( TransformedBoxSelectionDialog.Result result, int sourceIndex ) {
         // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
         // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
 
         List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
-        RandomAccessibleInterval rai = sources.get( sourceIndex ).getSpimSource().getSource( 0, 0);
+        int level = chooseSourceLevel( sourceIndex );
+        // TODO - warn that time series are not supported
+        RandomAccessibleInterval rai = sources.get( sourceIndex ).getSpimSource().getSource( 0, level);
         RandomAccessibleInterval crop =
                 Views.interval( rai, result.getInterval() );
 
@@ -262,25 +238,6 @@ public class big_warp {
         String directory = "C:\\Users\\meechan\\Documents\\temp\\";
         String filenameWithExtension = "test-TODAY.mhd";
         writer.save( imp, directory, filenameWithExtension );
-
-
-
-        // ArrayList<Integer> sourceIndices = new ArrayList<>();
-        // sourceIndices.add(sourceIndex);
-        // double[] outputVoxelSpacings = new double[] {1,1,1};
-        // BdvRealSourceToVoxelImageExporter bdvExport = new BdvRealSourceToVoxelImageExporter<>(bdv,
-        //         sourceIndices, result.getInterval(), 0, 0,
-        //         NLINEAR, outputVoxelSpacings, BdvRealSourceToVoxelImageExporter.ExportModality.SaveAsMhdVolumes,
-        //         BdvRealSourceToVoxelImageExporter.ExportDataType.UnsignedByte, Runtime.getRuntime().availableProcessors(), new ProgressWriterIJ());
-        // bdvExport.setOutputDirectory(tempDir);
-        //
-        // ArrayList<String> names = new ArrayList<>();
-        // for ( int index: sourceIndices ) {
-        //     names.add(sourceNames.get(index));
-        // }
-        //
-        // bdvExport.setSourceNames(names);
-        // bdvExport.export();
     }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
@@ -297,9 +254,27 @@ public class big_warp {
 
     // CHANGE SO optionally can set names of written volumes + can write directly to mhd
 
+    private void chooseFixedMovingDialog() {
+        final GenericDialog gd = new GenericDialog( "Choose fixed and moving..." );
+        String[] imageNames = new String[sourceNames.size()];
+        for ( int i = 0; i < imageNames.length; i++ ) {
+            imageNames[i] = sourceNames.get(i);
+        }
+        gd.addChoice("Fixed image..", imageNames, imageNames[0]);
+        gd.addChoice("Moving image..", imageNames, imageNames[1]);
+        gd.showDialog();
+
+        // TODO - check not the same image selected in both
+        if ( !gd.wasCanceled() ) {
+            fixedSourceIndex = gd.getNextChoiceIndex();
+            movingSourceIndex = gd.getNextChoiceIndex();
+        }
+    }
+
     private void openBigwarp () {
         try {
             (new RepeatingReleasedEventsFixer()).install();
+            chooseFixedMovingDialog();
             SpimData movingSpimData = spimSources.get(movingSourceIndex);
             SpimData fixedSpimData = spimSources.get(fixedSourceIndex);
             BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSpimData, fixedSpimData);
@@ -337,10 +312,6 @@ public class big_warp {
 
     // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
     private TransformedBoxSelectionDialog.Result cropDialog( int sourceIndex ) {
-        // final AffineTransform3D boxTransform = new AffineTransform3D();
-        // boxTransform.set( fixedDimensions[0], 0,0  );
-        // boxTransform.set( fixedDimensions[1], 1,1  );
-        // boxTransform.set( fixedDimensions[2], 2,2  );
 
         final AffineTransform3D boxTransform = new AffineTransform3D();
         transformedSources.get(sourceIndex).getFixedTransform(boxTransform);
