@@ -1,3 +1,5 @@
+package de.embl.schwab.crosshairSBEM;
+
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import de.embl.cba.bdv.utils.sources.LazySpimSource;

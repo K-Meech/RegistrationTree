@@ -1,18 +1,7 @@
-import bdv.ij.util.ProgressWriterIJ;
-import bdv.tools.boundingbox.TransformedRealBoxSelectionDialog;
-import bdv.util.BdvFunctions;
-import bdv.util.BdvHandle;
-import bdv.util.BdvOptions;
-import bdv.util.BdvStackSource;
-import bdv.viewer.Interpolation;
-import de.embl.cba.bdv.utils.BdvDialogs;
-import de.embl.cba.bdv.utils.BdvUtils;
-import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
-import mpicbg.spim.data.SpimData;
+package de.embl.schwab.crosshairSBEM;
+
 import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.XmlIoSpimData;
 import net.imagej.ImageJ;
-import net.imglib2.FinalRealInterval;
 
 
 public class temp {
@@ -53,7 +42,7 @@ public class temp {
         //                 new ProgressWriterIJ()
         //         );
         //
-        // exporter.setOutputDirectory( "C:\\Users\\meechan\\Documents\\temp\\exportTest");
+        // exporter.setOutputDirectory( "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp\\exportTest");
         //
         // exporter.export();
 

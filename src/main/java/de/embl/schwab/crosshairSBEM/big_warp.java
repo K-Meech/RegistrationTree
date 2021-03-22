@@ -1,13 +1,10 @@
-import bdv.export.ProgressWriter;
+package de.embl.schwab.crosshairSBEM;
+
 import bdv.ij.util.ProgressWriterIJ;
-import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.boundingbox.BoxSelectionOptions;
 import bdv.tools.boundingbox.TransformedRealBoxSelectionDialog;
 import bdv.util.BdvHandle;
-import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
-import de.embl.cba.bdp2.boundingbox.BoundingBoxDialog;
-import bdv.tools.boundingbox.TransformedBoxSelectionDialog;
 import bdv.tools.transformation.TransformedSource;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvOptions;
@@ -15,10 +12,7 @@ import bdv.util.BdvStackSource;
 import bdv.viewer.SourceAndConverter;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
-import de.embl.cba.bdv.utils.BdvUtils;
 // import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
-import de.embl.cba.bdv.utils.io.ProgressWriterBdv;
-import de.embl.cba.bdv.utils.sources.LazySpimSource;
 import de.embl.cba.metaimage_io.MetaImage_Writer;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -28,7 +22,6 @@ import itc.transforms.elastix.ElastixTransform;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
-import mpicbg.spim.data.sequence.XmlIoSequenceDescription;
 import net.imglib2.*;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -41,11 +34,8 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-
-import static bdv.viewer.Interpolation.NLINEAR;
 
 // TODO - is soruce index consistent
 
@@ -59,7 +49,7 @@ public class big_warp {
     ArrayList<String> sourceNames = new ArrayList<>();
     ArrayList<TransformedSource<?>> transformedSources = new ArrayList<>();
 
-    String tempDir = "C:\\Users\\meechan\\Documents\\temp\\exportTest";
+    String tempDir = "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp\\exportTest";
 
     BdvHandle bdv;
     BigWarp bw;
@@ -297,7 +287,7 @@ public class big_warp {
         ImagePlus imp = ImageJFunctions.wrapUnsignedByte( crop, "towrite" );
         System.out.println(imp.getBitDepth());
         MetaImage_Writer writer = new MetaImage_Writer();
-        String directory = "C:\\Users\\meechan\\Documents\\temp\\";
+        String directory = "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp\\";
         String filenameWithExtension = "test-" + level + "TODAY.mhd";
         writer.save( imp, directory, filenameWithExtension );
     }
