@@ -62,7 +62,7 @@ public class Transformer {
     ArrayList<String> sourceNames = new ArrayList<>();
     ArrayList<TransformedSource<?>> transformedSources = new ArrayList<>();
 
-    String tempDir = "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp\\exportTest";
+    String tempDir = "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp.temp\\exportTest";
 
     BdvHandle bdv;
     BigWarp bw;

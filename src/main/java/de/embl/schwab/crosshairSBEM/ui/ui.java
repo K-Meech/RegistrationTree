@@ -1,5 +1,6 @@
-package de.embl.schwab.crosshairSBEM;
+package de.embl.schwab.crosshairSBEM.ui;
 
+import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.gui.GenericDialog;
 
 import javax.swing.*;
@@ -94,7 +95,7 @@ public class ui extends JFrame {
                     updateFrame();
                     break;
                 case Elastix:
-                    new ElastixFrame( transformer );
+                    new ElastixUI( transformer );
                     break;
                 case Manual:
                     break;

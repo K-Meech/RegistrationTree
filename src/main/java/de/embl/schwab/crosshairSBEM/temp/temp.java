@@ -1,4 +1,4 @@
-package de.embl.schwab.crosshairSBEM;
+package de.embl.schwab.crosshairSBEM.temp;
 
 import mpicbg.spim.data.SpimDataException;
 import net.imagej.ImageJ;
@@ -42,7 +42,7 @@ public class temp {
         //                 new ProgressWriterIJ()
         //         );
         //
-        // exporter.setOutputDirectory( "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp\\exportTest");
+        // exporter.setOutputDirectory( "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp.temp\\exportTest");
         //
         // exporter.export();
 
