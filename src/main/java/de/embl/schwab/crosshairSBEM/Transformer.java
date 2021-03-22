@@ -413,6 +413,7 @@ public class Transformer {
     }
 
     public void openBigwarp () {
+        // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
         try {
             (new RepeatingReleasedEventsFixer()).install();
             chooseFixedMovingDialog();
@@ -424,6 +425,7 @@ public class Transformer {
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
             bw.getLandmarkFrame().repaint();
             bw.setMovingSpimData(movingSpimData, new File (sourcePaths[movingSourceIndex]));
+            bw.setTransformType("Rotation");
             crosshairBigwarpMenu();
         } catch (SpimDataException var4) {
             var4.printStackTrace();
