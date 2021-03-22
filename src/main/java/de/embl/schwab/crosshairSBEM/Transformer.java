@@ -35,6 +35,8 @@ import java.awt.*;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -201,7 +203,7 @@ public class Transformer {
             if (e.getActionCommand().equals("open_bigwarp")) {
                 openBigwarp();
             } else if (e.getActionCommand().equals("display_bigwarp")) {
-                displayBigwarp();
+                ;
             } else if (e.getActionCommand().equals("invert_display")) {
             invert();
             } else if (e.getActionCommand().equals("crop_dialog")) {
@@ -338,8 +340,50 @@ public class Transformer {
         }
     }
 
+    public WindowListener createWindowListener() {
+        WindowListener windowListener = new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {}
+
+            @Override
+            public void windowClosing(WindowEvent e) {}
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                bw.closeAll();
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {}
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+
+            @Override
+            public void windowActivated(WindowEvent e) {}
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+            }
+        };
+        return windowListener;
+    }
+
+    public void exportBigWarpToCrosshair() {
+        // TODO - deal with if fixed/moving same way around, or needs to be swapped
+        AffineTransform3D bigWarp = bw.affine3d();
+        transformedSources.get(fixedSourceIndex).setFixedTransform(bigWarp);
+
+        AffineTransform3D identity = new AffineTransform3D();
+        identity.identity();
+        transformedSources.get(movingSourceIndex).setFixedTransform(identity);
+        bdv.getViewerPanel().requestRepaint();
+        // TODO - add transform panel too
+    }
+
     public void crosshairBigwarpMenu() {
         JFrame menu = new JFrame();
+        menu.addWindowListener( createWindowListener() );
         menu.setTitle( "Crosshair - Bigwarp menu");
         // menu.getContentPane().setLayout( new BoxLayout(menu.getContentPane(), BoxLayout.Y_AXIS ) );
         menu.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
@@ -351,6 +395,14 @@ public class Transformer {
         exportCrosshairButton.setBackground( new Color(240, 128, 128));
         panel.add(exportCrosshairButton);
         menu.getContentPane().add(panel);
+
+        exportCrosshairButton.addActionListener( e ->
+        {
+            new Thread( () -> {
+                exportBigWarpToCrosshair();
+                menu.dispatchEvent(new WindowEvent(menu, WindowEvent.WINDOW_CLOSING));
+            } ).start();
+        } );
 
         menu.pack();
         Point bdvWindowLocation = bw.getViewerFrameQ().getLocation();
@@ -378,15 +430,7 @@ public class Transformer {
         }
     }
 
-    private void displayBigwarp() {
-        AffineTransform3D bigWarp = bw.affine3d();
-        transformedSources.get(fixedSourceIndex).setFixedTransform(bigWarp);
 
-        AffineTransform3D identity = new AffineTransform3D();
-        identity.identity();
-        transformedSources.get(movingSourceIndex).setFixedTransform(identity);
-        bdv.getViewerPanel().requestRepaint();
-    }
 
     private void invert() {
         // AffineTransform3D bigWarp = bw.affine3d();
