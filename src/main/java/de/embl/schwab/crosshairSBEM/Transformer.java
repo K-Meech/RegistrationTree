@@ -77,6 +77,10 @@ public class Transformer {
         }
     }
 
+    public ArrayList<String> getSourceNames() {
+        return sourceNames;
+    }
+
     public void run() {
 
 
@@ -198,32 +202,43 @@ public class Transformer {
         return dimensions;
     }
 
-    class GeneralListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            if (e.getActionCommand().equals("open_bigwarp")) {
-                openBigwarp();
-            } else if (e.getActionCommand().equals("display_bigwarp")) {
-                ;
-            } else if (e.getActionCommand().equals("invert_display")) {
-            invert();
-            } else if (e.getActionCommand().equals("crop_dialog")) {
-                new Thread( () -> {
-                    final GenericDialog gd = new GenericDialog( "Choose image to crop..." );
-                    String[] imageNames = new String[sourceNames.size()];
-                    for ( int i = 0; i < imageNames.length; i++ ) {
-                        imageNames[i] = sourceNames.get(i);
-                    }
-                    gd.addChoice("Image to crop..", imageNames, imageNames[0]);
-                    gd.showDialog();
+    // class GeneralListener implements ActionListener {
+    //     public void actionPerformed(ActionEvent e) {
+    //         if (e.getActionCommand().equals("open_bigwarp")) {
+    //             openBigwarp();
+    //         } else if (e.getActionCommand().equals("display_bigwarp")) {
+    //             ;
+    //         } else if (e.getActionCommand().equals("invert_display")) {
+    //         invert();
+    //         } else if (e.getActionCommand().equals("crop_dialog")) {
+    //             new Thread( () -> {
+    //                 final GenericDialog gd = new GenericDialog( "Choose image to crop..." );
+    //                 String[] imageNames = new String[sourceNames.size()];
+    //                 for ( int i = 0; i < imageNames.length; i++ ) {
+    //                     imageNames[i] = sourceNames.get(i);
+    //                 }
+    //                 gd.addChoice("Image to crop..", imageNames, imageNames[0]);
+    //                 gd.showDialog();
+    //
+    //                 if ( !gd.wasCanceled() ) {
+    //                     int sourceIndex = gd.getNextChoiceIndex();
+    //                     TransformedRealBoxSelectionDialog.Result result = cropDialog( sourceIndex );
+    //                     writeCrop( result, sourceIndex );
+    //                 }
+    //             } ).start();
+    //         }
+    //     }
+    // }
 
-                    if ( !gd.wasCanceled() ) {
-                        int sourceIndex = gd.getNextChoiceIndex();
-                        TransformedRealBoxSelectionDialog.Result result = cropDialog( sourceIndex );
-                        writeCrop( result, sourceIndex );
-                    }
-                } ).start();
-            }
+    public void cropAndWrite( int[] sourceIndices, String directory, String[] saveNames ) {
+
+        for (int i = 0; i<sourceIndices.length; i++) {
+            int sourceIndex = sourceIndices[i];
+            String sourceName = saveNames[i];
+            TransformedRealBoxSelectionDialog.Result crop = cropDialog( sourceIndex );
+            writeCrop( crop, sourceIndex, new File(directory), sourceName );
         }
+
     }
 
     // saving to mhd - https://github.com/embl-cba/elastixWrapper/blob/edb37861b497747217a8e9dd9e579fd8d8a325bb/src/main/java/de/embl/cba/elastixwrapper/elastix/ElastixWrapper.java#L479
@@ -282,7 +297,7 @@ public class Transformer {
         return new FinalInterval( min, max );
     }
 
-    private void writeCrop( TransformedRealBoxSelectionDialog.Result result, int sourceIndex ) {
+    private void writeCrop( TransformedRealBoxSelectionDialog.Result result, int sourceIndex, File tempDir, String name ) {
         // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
         // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
 
@@ -304,9 +319,8 @@ public class Transformer {
         ImagePlus imp = ImageJFunctions.wrapUnsignedByte( crop, "towrite" );
         System.out.println(imp.getBitDepth());
         MetaImage_Writer writer = new MetaImage_Writer();
-        String directory = "C:\\Users\\meechan\\Documents\\main.java.de.embl.schwab.crosshairSBEM.temp\\";
-        String filenameWithExtension = "test-" + level + "TODAY.mhd";
-        writer.save( imp, directory, filenameWithExtension );
+        String filenameWithExtension = name + ".mhd";
+        writer.save( imp, tempDir.getAbsolutePath(), filenameWithExtension );
     }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){

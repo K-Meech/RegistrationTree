@@ -94,6 +94,7 @@ public class ui extends JFrame {
                     updateFrame();
                     break;
                 case Elastix:
+                    new ElastixFrame( transformer );
                     break;
                 case Manual:
                     break;
