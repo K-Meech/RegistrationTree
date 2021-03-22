@@ -31,11 +31,16 @@ import org.apache.commons.compress.utils.FileNameUtils;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import static de.embl.schwab.crosshairSBEM.SwingUtils.TEXT_FIELD_HEIGHT;
+import static de.embl.schwab.crosshairSBEM.SwingUtils.getButton;
 
 // TODO - is soruce index consistent
 
@@ -333,6 +338,28 @@ public class Transformer {
         }
     }
 
+    public void crosshairBigwarpMenu() {
+        JFrame menu = new JFrame();
+        menu.setTitle( "Crosshair - Bigwarp menu");
+        // menu.getContentPane().setLayout( new BoxLayout(menu.getContentPane(), BoxLayout.Y_AXIS ) );
+        menu.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
+
+        JPanel panel = new JPanel();
+        // panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
+        panel.setBorder( BorderFactory.createEmptyBorder(0, 10, 10, 10) );
+        JButton exportCrosshairButton = getButton( "export current transform to Crosshair", new Dimension( 300, TEXT_FIELD_HEIGHT ));
+        exportCrosshairButton.setBackground( new Color(240, 128, 128));
+        panel.add(exportCrosshairButton);
+        menu.getContentPane().add(panel);
+
+        menu.pack();
+        Point bdvWindowLocation = bw.getViewerFrameQ().getLocation();
+        int bdvWindowHeight = bw.getViewerFrameQ().getHeight();
+
+        menu.setLocation(bdvWindowLocation.x, bdvWindowLocation.y + bdvWindowHeight);
+        menu.show();
+    }
+
     public void openBigwarp () {
         try {
             (new RepeatingReleasedEventsFixer()).install();
@@ -345,6 +372,7 @@ public class Transformer {
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
             bw.getLandmarkFrame().repaint();
             bw.setMovingSpimData(movingSpimData, new File (sourcePaths[movingSourceIndex]));
+            crosshairBigwarpMenu();
         } catch (SpimDataException var4) {
             var4.printStackTrace();
         }
