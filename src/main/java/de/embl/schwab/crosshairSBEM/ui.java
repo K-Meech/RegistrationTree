@@ -1,8 +1,9 @@
 package de.embl.schwab.crosshairSBEM;
 
+import ij.gui.GenericDialog;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 
 public class ui extends JFrame {
 
@@ -10,15 +11,24 @@ public class ui extends JFrame {
     public static final int COMBOBOX_WIDTH = 270;
     public static final Dimension BUTTON_DIMENSION = new Dimension( 80, TEXT_FIELD_HEIGHT );
 
+    Transformer transformer;
+    int maxTranformNumber = 0;
+
     public ui () {
         this.getContentPane().setLayout( new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS ) );
         this.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 
         addUneditableTransformPanel( 1, "physical units transform (from bdv xml)" );
-        addTranformPanel( 2 );
+        addTranformPanel( 2, "test" );
+
+        this.transformer = new Transformer();
 
         this.pack();
         this.show();
+    }
+
+    public void updateFrame() {
+        this.pack();
     }
 
     private void addUneditableTransformPanel( int transformNumber, String name ) {
@@ -34,25 +44,27 @@ public class ui extends JFrame {
         transformCombo.setEditable(false);
         transformCombo.setEnabled(false);
 
+        maxTranformNumber += 1;
+
         this.getContentPane().add(horizontalLayoutPanel);
     }
 
-    private void addTranformPanel( int transformNumber ) {
+    private void addTranformPanel( int transformNumber, String name ) {
         final JPanel horizontalLayoutPanel = horizontalLayoutPanel();
 
         final JButton visibilityButton = getButton("V");
         final JButton addTransformButton = getButton("+");
 
-        JComboBox transformCombo = createTranformComboBox( "test " );
+        JComboBox transformCombo = createTranformComboBox( name );
         // addButton.addActionListener( e ->
         // {
         //     new Thread( () -> { addDatasetDialog(); } ).start();
         // } );
         //
-        // editButton.addActionListener( e ->
-        // {
-        //     new Thread( () -> { editDatasetDialog(); } ).start();
-        // } );
+        addTransformButton.addActionListener( e ->
+        {
+            new Thread( () -> { addTransformDialog(); } ).start();
+        } );
 
         horizontalLayoutPanel.add(getJLabel(Integer.toString( transformNumber ), 60, 10));
         horizontalLayoutPanel.add( transformCombo );
@@ -60,7 +72,33 @@ public class ui extends JFrame {
         horizontalLayoutPanel.add( addTransformButton );
         horizontalLayoutPanel.setAlignmentX( Component.LEFT_ALIGNMENT );
 
+        maxTranformNumber += 1;
+
         this.getContentPane().add(horizontalLayoutPanel);
+    }
+
+    public void addTransformDialog () {
+        final GenericDialog gd = new GenericDialog( "Add a new transformation..." );
+        String[] transformTypes = new String[] {Transformer.TransformType.BigWarp.toString(), Transformer.TransformType.Elastix.toString(),
+                Transformer.TransformType.Manual.toString() };
+        gd.addChoice( "Transformation Type", transformTypes, transformTypes[0]);
+        gd.showDialog();
+
+        if ( !gd.wasCanceled() ) {
+            Transformer.TransformType transformType = Transformer.TransformType.valueOf( gd.getNextChoice() );
+
+            switch( transformType ) {
+                case BigWarp:
+                    transformer.openBigwarp();
+                    addTranformPanel( maxTranformNumber + 1, "bigwarp" );
+                    updateFrame();
+                    break;
+                case Elastix:
+                    break;
+                case Manual:
+                    break;
+            }
+        }
     }
 
     private JComboBox createTranformComboBox( String name ) {

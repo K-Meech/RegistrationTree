@@ -39,7 +39,13 @@ import java.util.List;
 
 // TODO - is soruce index consistent
 
-public class big_warp {
+public class Transformer {
+
+    public enum TransformType {
+        BigWarp,
+        Elastix,
+        Manual
+    }
 
     // String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
     //         "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
@@ -56,13 +62,17 @@ public class big_warp {
     int fixedSourceIndex;
     int movingSourceIndex;
 
-    public void run() {
-
+    public Transformer() {
         try {
             loadSources();
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
+    }
+
+    public void run() {
+
+
 
         // TODO - set names of sources to be root of filename?
 
@@ -79,36 +89,36 @@ public class big_warp {
         // bwcommand.movingImageXml = new File("C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml");
         // bwcommand.run();
 
-
-        JFrame testInterface = new JFrame();
-        JPanel content = new JPanel();
-        testInterface.setContentPane(content);
-
-        ActionListener generalListener = new GeneralListener();
-
-        JButton openBigwarpButton = new JButton("Open Bigwarp");
-        openBigwarpButton.setActionCommand("open_bigwarp");
-        openBigwarpButton.addActionListener(generalListener);
-
-        JButton displayBigwarpTransform = new JButton("Display Bigwarp");
-        displayBigwarpTransform.setActionCommand("display_bigwarp");
-        displayBigwarpTransform.addActionListener(generalListener);
-
-        JButton invertBigwarpTransform = new JButton("Invert Display");
-        invertBigwarpTransform.setActionCommand("invert_display");
-        invertBigwarpTransform.addActionListener(generalListener);
-
-        JButton cropDialogB = new JButton("crop");
-        cropDialogB.setActionCommand("crop_dialog");
-        cropDialogB.addActionListener(generalListener);
-
-        content.add(openBigwarpButton);
-        content.add(displayBigwarpTransform);
-        content.add(invertBigwarpTransform);
-        content.add(cropDialogB);
-
-        testInterface.pack();
-        testInterface.show();
+        //
+        // JFrame testInterface = new JFrame();
+        // JPanel content = new JPanel();
+        // testInterface.setContentPane(content);
+        //
+        // ActionListener generalListener = new GeneralListener();
+        //
+        // JButton openBigwarpButton = new JButton("Open Bigwarp");
+        // openBigwarpButton.setActionCommand("open_bigwarp");
+        // openBigwarpButton.addActionListener(generalListener);
+        //
+        // JButton displayBigwarpTransform = new JButton("Display Bigwarp");
+        // displayBigwarpTransform.setActionCommand("display_bigwarp");
+        // displayBigwarpTransform.addActionListener(generalListener);
+        //
+        // JButton invertBigwarpTransform = new JButton("Invert Display");
+        // invertBigwarpTransform.setActionCommand("invert_display");
+        // invertBigwarpTransform.addActionListener(generalListener);
+        //
+        // JButton cropDialogB = new JButton("crop");
+        // cropDialogB.setActionCommand("crop_dialog");
+        // cropDialogB.addActionListener(generalListener);
+        //
+        // content.add(openBigwarpButton);
+        // content.add(displayBigwarpTransform);
+        // content.add(invertBigwarpTransform);
+        // content.add(cropDialogB);
+        //
+        // testInterface.pack();
+        // testInterface.show();
 
 
         // minor goal
@@ -323,7 +333,7 @@ public class big_warp {
         }
     }
 
-    private void openBigwarp () {
+    public void openBigwarp () {
         try {
             (new RepeatingReleasedEventsFixer()).install();
             chooseFixedMovingDialog();
@@ -422,7 +432,7 @@ public class big_warp {
 
     public static void main( String[] args )
     {
-        new big_warp().run();
+        new Transformer().run();
     }
 
 
