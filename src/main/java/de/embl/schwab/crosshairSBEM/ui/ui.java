@@ -22,7 +22,7 @@ public class ui extends JFrame {
         addUneditableTransformPanel( 1, "physical units transform (from bdv xml)" );
         addTranformPanel( 2, "test" );
 
-        this.transformer = new Transformer();
+        // this.transformer = new Transformer();
 
         this.pack();
         this.show();

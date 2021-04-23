@@ -54,6 +54,12 @@ public class Transformer {
         Manual
     }
 
+    SpimData fixedSource;
+    SpimData movingSource;
+
+    TransformedSource<?> fixedTransformedSource;
+    TransformedSource<?> movingTransformedSource;
+
     // String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
     //         "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
     String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
@@ -69,9 +75,9 @@ public class Transformer {
     int fixedSourceIndex;
     int movingSourceIndex;
 
-    public Transformer() {
+    public Transformer( File movingImage, File fixedImage ) {
         try {
-            loadSources();
+            loadSources(movingImage, fixedImage);
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -159,24 +165,31 @@ public class Transformer {
         // heart of the manual transformer
     }
 
-    private void loadSources() throws SpimDataException {
-        for ( String sourcePath : sourcePaths ) {
-            SpimData source = new XmlIoSpimData().load(sourcePath);
-            spimSources.add(source);
-            sourceNames.add( FileNameUtils.getBaseName( sourcePath ) );
+    private void showSource( SpimData source ) {
 
-            BdvStackSource bdvStackSource;
-            if ( bdv == null ) {
-                bdvStackSource = BdvFunctions.show( source ).get(0);
-                bdv = bdvStackSource.getBdvHandle();
-            } else {
-                bdvStackSource = BdvFunctions.show(source,  BdvOptions.options().addTo(bdv) ).get(0);
-            }
-            bdvStackSource.setDisplayRange(0, 255);
+    }
 
-            transformedSources.add( (TransformedSource<?>) ((SourceAndConverter<?>) bdvStackSource.getSources().get(0)).getSpimSource() );
+    private void loadSources( File movingImage, File fixedImage ) throws SpimDataException {
 
-        }
+        String fixedImagePath = fixedImage.getAbsolutePath();
+        String movingImagePath = movingImage.getAbsolutePath();
+        fixedSource = new XmlIoSpimData().load( fixedImagePath );
+        movingSource = new XmlIoSpimData().load( movingImagePath );
+
+        String fixedSourceName = FileNameUtils.getBaseName( fixedImagePath );
+        String movingSourceName = FileNameUtils.getBaseName( movingImagePath );
+
+        // TODO -rename the source somehow so appears nicely in bdv pullout (how is this so difficult to find?)
+
+        BdvStackSource bdvStackSource;
+        bdvStackSource = BdvFunctions.show(fixedSource).get(0);
+        bdv = bdvStackSource.getBdvHandle();
+        bdvStackSource.setDisplayRange(0, 255);
+        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvStackSource.getSources().get(0)).getSpimSource();
+
+        bdvStackSource = BdvFunctions.show(movingSource, BdvOptions.options().addTo(bdv)).get(0);
+        bdvStackSource.setDisplayRange(0, 255);
+        movingTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvStackSource.getSources().get(0)).getSpimSource();
     }
 
     private double[] getSourceVoxelSize( int sourceIndex ) {
@@ -521,7 +534,6 @@ public class Transformer {
 
     public static void main( String[] args )
     {
-        new Transformer().run();
     }
 
 
