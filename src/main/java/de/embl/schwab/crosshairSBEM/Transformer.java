@@ -385,6 +385,7 @@ public class Transformer {
 
     public void exportBigWarpToCrosshair() {
         // TODO - deal with if fixed/moving same way around, or needs to be swapped
+        // TODO - check if type of transform is supported i.e. no thin plate splines!
         AffineTransform3D bigWarp = bw.affine3d();
         transformedSources.get(fixedSourceIndex).setFixedTransform(bigWarp);
 

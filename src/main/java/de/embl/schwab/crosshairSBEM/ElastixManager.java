@@ -4,10 +4,17 @@ import de.embl.cba.elastixwrapper.commandline.ElastixCaller;
 import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
+import ij.IJ;
+import itc.converters.*;
+import itc.transforms.elastix.*;
+import itc.utilities.TransformUtils;
+import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.log.StderrLogService;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +31,16 @@ public class ElastixManager {
     public ArrayList<String> fixedImageFilePaths;
     public ArrayList<String> movingImageFilePaths;
 
+    // Strings in elastix transform files (Transform "")
+    private final String TRANSLATION = "TranslationTransform";
+    private final String EULER = "EulerTransform";
+    private final String SIMILARITY = "SimilarityTransform";
+    private final String AFFINE = "AffineTransform";
+    private final String SPLINE = "BSplineTransform";
+
+
+    // TODO - add back translation support? Doesn't appear to be class in itc converters for this?
+    private String[] supportedTransforms = new String[] { EULER, SIMILARITY, AFFINE };
     private String parameterFilePath;
 
     public ElastixManager() {
@@ -68,8 +85,61 @@ public class ElastixManager {
         elastixSettings.initialTransformationFilePath = "";
         return elastixSettings;
     }
+
+    private void exportElastixResultToCrosshair() {
+        File transformResultFile = new File( tmpDir, "TransformParameters.0.txt" );
+        try {
+            ElastixTransform elastixTransform = ElastixTransform.load( transformResultFile );
+            int nDimensions = elastixTransform.FixedImageDimension;
+            boolean contains = Arrays.stream(supportedTransforms).anyMatch(elastixTransform.Transform::equals);
+            if ( contains ) {
+
+                AffineTransform3D bdvTransform;
+                switch( elastixTransform.Transform ) {
+                    case EULER:
+                        // TODO - scaling stuff - how to fix?
+                        //TODO - throw error forunexepcted dimesnios?
+                        if ( nDimensions == 2 ) {
+                            bdvTransform = ElastixEuler2DToAffineTransform3D.convert((ElastixEulerTransform2D) elastixTransform);
+                        } else if ( nDimensions == 3 ) {
+                            bdvTransform = ElastixEuler3DToAffineTransform3D.convert((ElastixEulerTransform3D) elastixTransform);
+                        }
+
+                        // the elastix transform is in mm units, we convert to what was used for rest of images (microns)
+                        // bdvTransform = TransformUtils.scaleAffineTransform3DUnits( bdvTransform, new double[]{ 1000, 1000, 1000 } );
+                        // System.out.println(new AffineTransform3DToFlatString().convert(bdvTransform).getString());
+                        break;
+                    case SIMILARITY:
+                        // TODO - not implemented yet in itc-converters
+                        if ( nDimensions == 2 ) {
+                            bdvTransform = ElastixSimilarity2DToAffineTransform3D.convert( (ElastixSimilarityTransform2D) elastixTransform );
+                        } else if ( nDimensions == 3 ) {
+                            bdvTransform = ElastixSimilarity3DToAffineTransform3D.convert( (ElastixSimilarityTransform3D) elastixTransform );
+                        }
+                        break;
+                    case AFFINE:
+                        if ( nDimensions == 2 ) {
+                            bdvTransform = ElastixAffine2DToAffineTransform3D.convert( (ElastixAffineTransform2D) elastixTransform );
+                        } else if ( nDimensions == 3 ) {
+                            bdvTransform = ElastixAffine3DToAffineTransform3D.convert((ElastixAffineTransform3D) elastixTransform);
+                        }
+                        break;
+                }
+
+            } else {
+                //TODO - error?
+                IJ.log( "Transform type unsupported in Crosshair!");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void callElastix() {
         createElastixParameterFile();
         new ElastixCaller( createElastixSettings() ).callElastix();
+
+        // TODO - check it waits for finish
+        exportElastixResultToCrosshair();
     }
 }

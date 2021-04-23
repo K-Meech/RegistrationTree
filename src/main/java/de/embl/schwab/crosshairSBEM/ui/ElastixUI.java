@@ -36,7 +36,7 @@ public class ElastixUI {
             transformer.getSourceNames().toArray(sourceNames);
             gd.addChoice("Fixed Image", sourceNames, sourceNames[0]);
             gd.addChoice("Moving image", sourceNames, sourceNames[1]);
-            String[] transformationTypes = new String[]{ElastixParameters.TRANSLATION,
+            String[] transformationTypes = new String[]{
                     ElastixParameters.EULER,
                     ElastixParameters.SIMILARITY,
                     ElastixParameters.AFFINE,
