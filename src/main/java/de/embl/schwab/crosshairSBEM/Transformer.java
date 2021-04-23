@@ -14,6 +14,7 @@ import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
 // import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
 import de.embl.cba.metaimage_io.MetaImage_Writer;
+import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import itc.commands.BigWarpAffineToTransformixFileCommand;
@@ -29,6 +30,7 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import org.apache.commons.compress.utils.FileNameUtils;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
+import sc.fiji.bdvpg.spimdata.importer.SpimDataFromXmlImporter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -78,6 +80,7 @@ public class Transformer {
     public Transformer( File movingImage, File fixedImage ) {
         try {
             loadSources(movingImage, fixedImage);
+            new RegistrationTree();
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
