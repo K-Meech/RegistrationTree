@@ -1,6 +1,7 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
 import de.embl.schwab.crosshairSBEM.CrosshairAffineTransform;
+import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.IJ;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -24,8 +25,12 @@ public class RegistrationTree {
     JScrollPane treeView;
     JTree tree;
     DefaultTreeModel model;
+    Transformer transformer;
 
-    public RegistrationTree() {
+    public RegistrationTree( Transformer transformer ) {
+
+        this.transformer = transformer;
+
         frame = new JFrame("Registrations");
         panel = new JPanel(new BorderLayout());
 
@@ -52,7 +57,7 @@ public class RegistrationTree {
 
         panel.add(treeView, BorderLayout.CENTER);
 
-        RegistrationContextMenu popup =  new RegistrationContextMenu(this);
+        RegistrationContextMenu popup =  new RegistrationContextMenu(this, transformer );
 
         // Shows Popup on right click
         tree.addMouseListener(new MouseAdapter() {

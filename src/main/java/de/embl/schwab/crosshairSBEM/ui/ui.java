@@ -90,7 +90,7 @@ public class ui extends JFrame {
 
             switch( transformType ) {
                 case BigWarp:
-                    transformer.openBigwarp();
+                    // transformer.getBigWarpManager().openBigwarp();
                     addTranformPanel( maxTranformNumber + 1, "bigwarp" );
                     updateFrame();
                     break;

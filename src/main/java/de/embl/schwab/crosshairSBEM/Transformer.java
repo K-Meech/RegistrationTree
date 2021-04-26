@@ -53,14 +53,22 @@ public class Transformer {
     public enum TransformType {
         BigWarp,
         Elastix,
-        Manual
+        Manual,
+        AffineString
     }
 
-    SpimData fixedSource;
-    SpimData movingSource;
+    private SpimData fixedSource;
+    private SpimData movingSource;
 
-    TransformedSource<?> fixedTransformedSource;
-    TransformedSource<?> movingTransformedSource;
+    private TransformedSource<?> fixedTransformedSource;
+    private TransformedSource<?> movingTransformedSource;
+
+    private File fixedImage;
+    private File movingImage;
+
+    private RegistrationTree registrationTree;
+    private BigWarpManager bigWarpManager;
+    private ElastixManager elastixManager;
 
     // String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
     //         "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
@@ -80,7 +88,11 @@ public class Transformer {
     public Transformer( File movingImage, File fixedImage ) {
         try {
             loadSources(movingImage, fixedImage);
-            new RegistrationTree();
+            this.fixedImage = fixedImage;
+            this.movingImage = movingImage;
+            registrationTree = new RegistrationTree( this );
+            bigWarpManager = new BigWarpManager();
+            elastixManager = new ElastixManager();
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -88,6 +100,14 @@ public class Transformer {
 
     public ArrayList<String> getSourceNames() {
         return sourceNames;
+    }
+
+    public BigWarpManager getBigWarpManager() {
+        return bigWarpManager;
+    }
+
+    public ElastixManager getElastixManager() {
+        return elastixManager;
     }
 
     public void run() {
@@ -166,6 +186,10 @@ public class Transformer {
         // opening bigwarp from RAI?
 
         // heart of the manual transformer
+    }
+
+    public void openBigwarp() {
+        bigWarpManager.openBigwarp(movingSource, fixedSource, movingImage.getAbsolutePath());
     }
 
     private void showSource( SpimData source ) {
@@ -352,117 +376,6 @@ public class Transformer {
     }
 
     // CHANGE SO optionally can set names of written volumes + can write directly to mhd
-
-    private void chooseFixedMovingDialog() {
-        final GenericDialog gd = new GenericDialog( "Choose fixed and moving..." );
-        String[] imageNames = new String[sourceNames.size()];
-        for ( int i = 0; i < imageNames.length; i++ ) {
-            imageNames[i] = sourceNames.get(i);
-        }
-        gd.addChoice("Fixed image..", imageNames, imageNames[0]);
-        gd.addChoice("Moving image..", imageNames, imageNames[1]);
-        gd.showDialog();
-
-        // TODO - check not the same image selected in both
-        if ( !gd.wasCanceled() ) {
-            fixedSourceIndex = gd.getNextChoiceIndex();
-            movingSourceIndex = gd.getNextChoiceIndex();
-        }
-    }
-
-    public WindowListener createWindowListener() {
-        WindowListener windowListener = new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {}
-
-            @Override
-            public void windowClosing(WindowEvent e) {}
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-                bw.closeAll();
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {}
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {}
-
-            @Override
-            public void windowActivated(WindowEvent e) {}
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-            }
-        };
-        return windowListener;
-    }
-
-    public void exportBigWarpToCrosshair() {
-        // TODO - deal with if fixed/moving same way around, or needs to be swapped
-        // TODO - check if type of transform is supported i.e. no thin plate splines!
-        AffineTransform3D bigWarp = bw.affine3d();
-        transformedSources.get(fixedSourceIndex).setFixedTransform(bigWarp);
-
-        AffineTransform3D identity = new AffineTransform3D();
-        identity.identity();
-        transformedSources.get(movingSourceIndex).setFixedTransform(identity);
-        bdv.getViewerPanel().requestRepaint();
-        // TODO - add transform panel too
-    }
-
-    public void crosshairBigwarpMenu() {
-        JFrame menu = new JFrame();
-        menu.addWindowListener( createWindowListener() );
-        menu.setTitle( "Crosshair - Bigwarp menu");
-        // menu.getContentPane().setLayout( new BoxLayout(menu.getContentPane(), BoxLayout.Y_AXIS ) );
-        menu.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
-
-        JPanel panel = new JPanel();
-        // panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
-        panel.setBorder( BorderFactory.createEmptyBorder(0, 10, 10, 10) );
-        JButton exportCrosshairButton = getButton( "export current transform to Crosshair", new Dimension( 300, TEXT_FIELD_HEIGHT ));
-        exportCrosshairButton.setBackground( new Color(240, 128, 128));
-        panel.add(exportCrosshairButton);
-        menu.getContentPane().add(panel);
-
-        exportCrosshairButton.addActionListener( e ->
-        {
-            new Thread( () -> {
-                exportBigWarpToCrosshair();
-                menu.dispatchEvent(new WindowEvent(menu, WindowEvent.WINDOW_CLOSING));
-            } ).start();
-        } );
-
-        menu.pack();
-        Point bdvWindowLocation = bw.getViewerFrameQ().getLocation();
-        int bdvWindowHeight = bw.getViewerFrameQ().getHeight();
-
-        menu.setLocation(bdvWindowLocation.x, bdvWindowLocation.y + bdvWindowHeight);
-        menu.show();
-    }
-
-    public void openBigwarp () {
-        // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
-        try {
-            (new RepeatingReleasedEventsFixer()).install();
-            chooseFixedMovingDialog();
-            SpimData movingSpimData = spimSources.get(movingSourceIndex);
-            SpimData fixedSpimData = spimSources.get(fixedSourceIndex);
-            BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSpimData, fixedSpimData);
-            bw = new BigWarp(bigWarpData, "Big Warp", new ProgressWriterIJ());
-            bw.getViewerFrameP().getViewerPanel().requestRepaint();
-            bw.getViewerFrameQ().getViewerPanel().requestRepaint();
-            bw.getLandmarkFrame().repaint();
-            bw.setMovingSpimData(movingSpimData, new File (sourcePaths[movingSourceIndex]));
-            bw.setTransformType("Rotation");
-            crosshairBigwarpMenu();
-        } catch (SpimDataException var4) {
-            var4.printStackTrace();
-        }
-    }
-
 
 
     private void invert() {
