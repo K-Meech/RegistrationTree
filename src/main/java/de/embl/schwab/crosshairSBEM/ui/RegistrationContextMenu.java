@@ -48,10 +48,12 @@ public class RegistrationContextMenu {
         ActionListener addListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SwingUtilities.invokeLater( () ->
-                {
-                    addTransformDialog();
-                } );
+                new Thread( () -> {
+                    SwingUtilities.invokeLater(() ->
+                    {
+                        addTransformDialog();
+                    });
+                }).start();
             }
         };
         addPopupAction("Add new transform", addListener);
@@ -83,7 +85,11 @@ public class RegistrationContextMenu {
                             tree.tree.getSelectionPath());
                     break;
                 case Elastix:
-                    new ElastixUI( transformer );
+                    transformer.openElastix();
+                    // TODO - only if transform was done, and button was pushed
+                    // TODO - put actual transform here
+                    tree.addRegistrationNode(new CrosshairAffineTransform(new AffineTransform3D(), transformName),
+                            tree.tree.getSelectionPath());
                     break;
                 case Manual:
                     break;

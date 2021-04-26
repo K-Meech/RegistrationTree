@@ -5,6 +5,8 @@ import net.imglib2.realtransform.AffineTransform3D;
 public class CrosshairAffineTransform {
 
     private AffineTransform3D affine;
+    // TODO - crop used for each image
+    // TODO - downsampling level used for each image
     private String name;
 
     public CrosshairAffineTransform( AffineTransform3D affine, String name ) {

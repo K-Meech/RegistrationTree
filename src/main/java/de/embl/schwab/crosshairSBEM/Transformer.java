@@ -1,8 +1,5 @@
 package de.embl.schwab.crosshairSBEM;
 
-import bdv.ij.util.ProgressWriterIJ;
-import bdv.tools.boundingbox.BoxSelectionOptions;
-import bdv.tools.boundingbox.TransformedRealBoxSelectionDialog;
 import bdv.util.BdvHandle;
 import bdv.viewer.Source;
 import bdv.tools.transformation.TransformedSource;
@@ -11,43 +8,33 @@ import bdv.util.BdvOptions;
 import bdv.util.BdvStackSource;
 import bdv.viewer.SourceAndConverter;
 import bigwarp.BigWarp;
-import bigwarp.BigWarpInit;
 // import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
-import de.embl.cba.metaimage_io.MetaImage_Writer;
+import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
-import ij.ImagePlus;
-import ij.gui.GenericDialog;
 import itc.commands.BigWarpAffineToTransformixFileCommand;
 import itc.converters.AffineTransform3DToFlatString;
 import itc.transforms.elastix.ElastixTransform;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
-import net.imglib2.*;
-import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.FinalRealInterval;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
 import org.apache.commons.compress.utils.FileNameUtils;
-import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
-import sc.fiji.bdvpg.spimdata.importer.SpimDataFromXmlImporter;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.embl.schwab.crosshairSBEM.SwingUtils.TEXT_FIELD_HEIGHT;
 import static de.embl.schwab.crosshairSBEM.SwingUtils.getButton;
 
 // TODO - is soruce index consistent
-
+/**
+ * Stores information on fixed and moving sources
+ * Entry point for all transformers
+ */
 public class Transformer {
 
     public enum TransformType {
@@ -57,8 +44,15 @@ public class Transformer {
         AffineString
     }
 
-    private SpimData fixedSource;
-    private SpimData movingSource;
+    public enum ImageType {
+        FIXED,
+        MOVING
+    }
+
+    private SpimData fixedSpimData;
+    private BdvStackSource fixedSource;
+    private SpimData movingSpimData;
+    private BdvStackSource movingSource;
 
     private TransformedSource<?> fixedTransformedSource;
     private TransformedSource<?> movingTransformedSource;
@@ -92,7 +86,7 @@ public class Transformer {
             this.movingImage = movingImage;
             registrationTree = new RegistrationTree( this );
             bigWarpManager = new BigWarpManager( this );
-            elastixManager = new ElastixManager( );
+            elastixManager = new ElastixManager( this );
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -110,16 +104,30 @@ public class Transformer {
         return elastixManager;
     }
 
+    public BdvHandle getBdv() {
+        return bdv;
+    }
+
     public void refreshBdvWindow() {
         bdv.getViewerPanel().requestRepaint();
     }
 
-    public void setFixedTransform( AffineTransform3D affine ) {
-        fixedTransformedSource.setFixedTransform( affine );
+    public AffineTransform3D getTransform( ImageType imageType ) {
+        AffineTransform3D affine = new AffineTransform3D();
+        if ( imageType == ImageType.FIXED ) {
+            fixedTransformedSource.getFixedTransform(affine);
+        } else {
+            movingTransformedSource.getFixedTransform(affine);
+        }
+        return affine;
     }
 
-    public void setMovingTransform( AffineTransform3D affine ) {
-        movingTransformedSource.setFixedTransform( affine );
+    public void setTransform( ImageType imageType, AffineTransform3D affine ) {
+        if ( imageType == ImageType.FIXED ) {
+            fixedTransformedSource.setFixedTransform(affine);
+        } else {
+            movingTransformedSource.setFixedTransform( affine );
+        }
     }
 
     public void run() {
@@ -201,7 +209,11 @@ public class Transformer {
     }
 
     public void openBigwarp() {
-        bigWarpManager.openBigwarp(movingSource, fixedSource, movingImage.getAbsolutePath());
+        bigWarpManager.openBigwarp(movingSpimData, fixedSpimData, movingImage.getAbsolutePath());
+    }
+
+    public void openElastix() {
+        new ElastixUI( elastixManager );
     }
 
     private void showSource( SpimData source ) {
@@ -212,46 +224,123 @@ public class Transformer {
 
         String fixedImagePath = fixedImage.getAbsolutePath();
         String movingImagePath = movingImage.getAbsolutePath();
-        fixedSource = new XmlIoSpimData().load( fixedImagePath );
-        movingSource = new XmlIoSpimData().load( movingImagePath );
+        fixedSpimData = new XmlIoSpimData().load( fixedImagePath );
+        movingSpimData = new XmlIoSpimData().load( movingImagePath );
 
         String fixedSourceName = FileNameUtils.getBaseName( fixedImagePath );
         String movingSourceName = FileNameUtils.getBaseName( movingImagePath );
 
         // TODO -rename the source somehow so appears nicely in bdv pullout (how is this so difficult to find?)
 
-        BdvStackSource bdvStackSource;
-        bdvStackSource = BdvFunctions.show(fixedSource).get(0);
-        bdv = bdvStackSource.getBdvHandle();
-        bdvStackSource.setDisplayRange(0, 255);
-        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvStackSource.getSources().get(0)).getSpimSource();
+        fixedSource = BdvFunctions.show(fixedSpimData).get(0);
+        bdv = fixedSource.getBdvHandle();
+        fixedSource.setDisplayRange(0, 255);
+        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
 
-        bdvStackSource = BdvFunctions.show(movingSource, BdvOptions.options().addTo(bdv)).get(0);
-        bdvStackSource.setDisplayRange(0, 255);
-        movingTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) bdvStackSource.getSources().get(0)).getSpimSource();
+        movingSource = BdvFunctions.show(movingSpimData, BdvOptions.options().addTo(bdv)).get(0);
+        movingSource.setDisplayRange(0, 255);
+        movingTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) movingSource.getSources().get(0)).getSpimSource();
     }
 
-    private double[] getSourceVoxelSize( int sourceIndex ) {
+    private double[] getFullResolutionSourceVoxelSize( SpimData spimData ) {
         double[] sourceDimensions = new double[3];
-        spimSources.get(sourceIndex).getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(sourceDimensions);
+        spimData.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().dimensions(sourceDimensions);
         return sourceDimensions;
     }
 
-    private String getSourceUnit( int sourceIndex ) {
-        return spimSources.get(sourceIndex).getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().unit();
+    private double[] getSourceVoxelSize( SpimData spimData, BdvStackSource bdvStackSource,  int level ) {
+        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( bdvStackSource, 0 );
+        double[] fullResolutionVoxelSize = getFullResolutionSourceVoxelSize( spimData );
+
+        if ( level == 0 ) {
+            return fullResolutionVoxelSize;
+        } else {
+            long[] downsampledResolutionVoxelDimensions = getSourceVoxelDimensions( bdvStackSource, level );
+            double[] downsampledResolutionVoxelSize = new double[3];
+            for ( int i = 0; i< fullResolutionVoxelDimensions.length; i++ ) {
+                downsampledResolutionVoxelSize[i] = fullResolutionVoxelSize[i] *
+                        ( (double) fullResolutionVoxelDimensions[i] / (double) downsampledResolutionVoxelDimensions[i] );
+            }
+            return downsampledResolutionVoxelSize;
+        }
     }
 
-    private long[] getSourceVoxelDimensions( int sourceIndex ) {
-        return getSourceVoxelDimensionsAtLevel( sourceIndex, 0 );
+    private String getSourceUnit( SpimData spimData ) {
+        return spimData.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().unit();
     }
 
-    private long[] getSourceVoxelDimensionsAtLevel( int sourceIndex, int level ) {
-        List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
-        Source spimSource = sources.get( sourceIndex ).getSpimSource();
+    private long[] getSourceVoxelDimensions( BdvStackSource bdvStackSource, int level ) {
 
+        Source spimSource = ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
+
+        // TODO - warn doesn't support time series
         long[] dimensions = new long[3];
         spimSource.getSource( 0, level ).dimensions( dimensions );
         return dimensions;
+    }
+
+    private int getSourceNumberOfLevels( BdvStackSource bdvStackSource ) {
+        Source spimSource = ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
+        return spimSource.getNumMipmapLevels();
+    }
+
+    public double[] getSourceVoxelSize( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getFullResolutionSourceVoxelSize(fixedSpimData);
+        } else {
+            return getFullResolutionSourceVoxelSize(movingSpimData);
+        }
+    }
+
+    public double[] getSourceVoxelSize( ImageType imageType, int level ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceVoxelSize( fixedSpimData, fixedSource, level );
+        } else {
+            return getSourceVoxelSize( movingSpimData, movingSource, level );
+        }
+    }
+
+    public String getSourceUnit( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceUnit(fixedSpimData);
+        } else {
+            return getSourceUnit(movingSpimData);
+        }
+    }
+
+    public long[] getSourceVoxelDimensions( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceVoxelDimensions(fixedSource, 0);
+        } else {
+            return getSourceVoxelDimensions( movingSource, 0 );
+        }
+    }
+
+    public long[] getSourceVoxelDimensions( ImageType imageType, int level ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceVoxelDimensions( fixedSource, level );
+        } else {
+            return getSourceVoxelDimensions( movingSource, level );
+        }
+    }
+
+    public int getSourceNumberOfLevels( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceNumberOfLevels( fixedSource );
+        } else {
+            return getSourceNumberOfLevels( movingSource );
+        }
+    }
+
+    public RandomAccessibleInterval getRAI( ImageType imageType, int level ) {
+
+        Source spimSource;
+        if ( imageType == ImageType.FIXED ) {
+            spimSource = ((SourceAndConverter<?>) fixedSource.getSources().get(0) ).getSpimSource();
+        } else {
+            spimSource = ((SourceAndConverter<?>) movingSource.getSources().get(0) ).getSpimSource();
+        }
+        return spimSource.getSource( 0, level);
     }
 
     // class GeneralListener implements ActionListener {
@@ -282,98 +371,13 @@ public class Transformer {
     //     }
     // }
 
-    public void cropAndWrite( int[] sourceIndices, String directory, String[] saveNames ) {
 
-        for (int i = 0; i<sourceIndices.length; i++) {
-            int sourceIndex = sourceIndices[i];
-            String sourceName = saveNames[i];
-            TransformedRealBoxSelectionDialog.Result crop = cropDialog( sourceIndex );
-            writeCrop( crop, sourceIndex, new File(directory), sourceName );
-        }
 
-    }
 
-    // saving to mhd - https://github.com/embl-cba/elastixWrapper/blob/edb37861b497747217a8e9dd9e579fd8d8a325bb/src/main/java/de/embl/cba/elastixwrapper/elastix/ElastixWrapper.java#L479
-    // save to mhd AND enable choosing of name
 
-    private int chooseSourceLevel( int sourceIndex ) throws RuntimeException {
-        final GenericDialog gd = new GenericDialog( "Choose resolution level..." );
-        List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
-        Source source = sources.get( sourceIndex ).getSpimSource();
-        int numLevels = source.getNumMipmapLevels();
 
-        String[] resolutionLevels = new String[numLevels];
-        for ( int i = 0; i < numLevels; i++ ) {
-            resolutionLevels[i] = Integer.toString( i );
-        }
-        gd.addChoice("Level:", resolutionLevels, resolutionLevels[0]);
-        gd.showDialog();
 
-        if ( !gd.wasCanceled() ) {
-            return gd.getNextChoiceIndex();
-        } else {
-            throw new RuntimeException();
-        }
-    }
 
-    private double[] getVoxelSizeAtLevel( int sourceIndex, int level ) {
-        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( sourceIndex );
-        double[] fullResolutionVoxelSize = getSourceVoxelSize( sourceIndex );
-
-        if ( level == 0 ) {
-            return fullResolutionVoxelSize;
-        } else {
-            long[] downsampledResolutionVoxelDimensions = getSourceVoxelDimensionsAtLevel( sourceIndex, level );
-            double[] downsampledResolutionVoxelSize = new double[3];
-            for ( int i = 0; i< fullResolutionVoxelDimensions.length; i++ ) {
-                downsampledResolutionVoxelSize[i] = fullResolutionVoxelSize[i] *
-                        ( (double) fullResolutionVoxelDimensions[i] / (double) downsampledResolutionVoxelDimensions[i] );
-            }
-            return downsampledResolutionVoxelSize;
-        }
-    }
-
-    public static Interval toVoxelInterval(
-            RealInterval interval,
-            double[] voxelSize )
-    {
-        final long[] min = new long[ 3 ];
-        final long[] max = new long[ 3 ];
-
-        for ( int d = 0; d < 3; d++ )
-        {
-            min[ d ] = Math.round( interval.realMin( d ) / voxelSize[ d ] );
-            max[ d ] = Math.round( interval.realMax( d ) / voxelSize[ d ] );
-        }
-
-        return new FinalInterval( min, max );
-    }
-
-    private void writeCrop( TransformedRealBoxSelectionDialog.Result result, int sourceIndex, File tempDir, String name ) {
-        // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
-        // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
-
-        List<SourceAndConverter<?>> sources = bdv.getViewerPanel().state().getSources();
-        int level = chooseSourceLevel( sourceIndex );
-        // TODO - warn that time series are not supported
-        RandomAccessibleInterval rai = sources.get( sourceIndex ).getSpimSource().getSource( 0, level);
-
-        // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
-        // i.e. get voxel size at that level, and use it to get a voxel interval
-        double[] downsampledVoxelSize = getVoxelSizeAtLevel( sourceIndex, level );
-        Interval voxelCropInterval = toVoxelInterval( result.getInterval(), downsampledVoxelSize );
-
-        RandomAccessibleInterval crop =
-                Views.interval( rai, voxelCropInterval );
-
-        // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
-        // sensibly or just clip?
-        ImagePlus imp = ImageJFunctions.wrapUnsignedByte( crop, "towrite" );
-        System.out.println(imp.getBitDepth());
-        MetaImage_Writer writer = new MetaImage_Writer();
-        String filenameWithExtension = name + ".mhd";
-        writer.save( imp, tempDir.getAbsolutePath(), filenameWithExtension );
-    }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
         AffineTransform3D fixedTransform = new AffineTransform3D();
@@ -402,53 +406,9 @@ public class Transformer {
         bdv.getViewerPanel().requestRepaint();
     }
 
-    private FinalRealInterval getRangeInterval(int sourceIndex )
-    {
-        double[] max = new double[ 3 ];
 
-        long[] sourceVoxelDimensions = getSourceVoxelDimensions( sourceIndex );
-        double[] sourceVoxelSize = getSourceVoxelSize( sourceIndex );
-        for ( int i = 0; i < sourceVoxelSize.length; i++ ) {
-            max[i] = sourceVoxelDimensions[i] * sourceVoxelSize[i];
-        }
-        return Intervals.createMinMaxReal(
-                0, 0, 0,
-                max[0], max[1], max[2]);
-    }
 
-    // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
-    // TODO - y dim seems integer??
-    private TransformedRealBoxSelectionDialog.Result cropDialog(int sourceIndex ) {
 
-        // https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java
-        //https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L58
-
-        // based on calbirated real box stuff here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/boundingbox/BoundingBoxDialog.java#L144
-        final AffineTransform3D boxTransform = new AffineTransform3D();
-        transformedSources.get(sourceIndex).getFixedTransform(boxTransform);
-
-        // set sensible initial intervals
-        FinalRealInterval rangeInterval = getRangeInterval( sourceIndex );
-        FinalRealInterval initialInterval = Intervals.createMinMaxReal( 0, 0, 0,
-                rangeInterval.realMax(0)/2,
-                rangeInterval.realMax(1)/2,
-                rangeInterval.realMax(2)/2);
-
-        TransformedRealBoxSelectionDialog.Result result =  BdvFunctions.selectRealBox(
-                bdv,
-                boxTransform,
-                initialInterval,
-                rangeInterval,
-                BoxSelectionOptions.options()
-                        .title( "Units: " + getSourceUnit( sourceIndex ) )
-        );
-
-        if ( result.isValid() ) {
-            return result;
-        } else {
-            return null;
-        }
-    }
 
 
 

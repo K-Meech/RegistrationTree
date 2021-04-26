@@ -4,6 +4,7 @@ import de.embl.cba.elastixwrapper.commandline.ElastixCaller;
 import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
+import de.embl.schwab.crosshairSBEM.ui.CropperUI;
 import ij.IJ;
 import itc.converters.*;
 import itc.transforms.elastix.*;
@@ -43,9 +44,12 @@ public class ElastixManager {
     private String[] supportedTransforms = new String[] { EULER, SIMILARITY, AFFINE };
     private String parameterFilePath;
 
-    public ElastixManager() {
+    private Transformer transformer;
+
+    public ElastixManager( Transformer transformer ) {
         this.fixedImageFilePaths = new ArrayList<>();
         this.movingImageFilePaths = new ArrayList<>();
+        this.transformer = transformer;
     }
 
     private void createElastixParameterFile() {
@@ -133,6 +137,13 @@ public class ElastixManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void writeCroppedAndDownsampledImages() {
+        // TODO - let them use full size if want, or re-use previous crops
+        CropperUI cropperUI = new CropperUI( new Cropper( transformer ) );
+        cropperUI.cropDialog( Transformer.ImageType.FIXED, new File(tmpDir) );
+        cropperUI.cropDialog( Transformer.ImageType.MOVING, new File(tmpDir) );
     }
 
     public void callElastix() {
