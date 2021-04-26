@@ -37,7 +37,6 @@ public class RegistrationContextMenu {
     }
 
     private void populateActions() {
-
         // show source with transform in BDV
 
         // remove source with transform from BDV
@@ -48,11 +47,10 @@ public class RegistrationContextMenu {
         ActionListener addListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Note: putting SwingUtilities.invokeLater here also resulted in the crop box hanging, and never
+                // becoming visible
                 new Thread( () -> {
-                    SwingUtilities.invokeLater(() ->
-                    {
                         addTransformDialog();
-                    });
                 }).start();
             }
         };
