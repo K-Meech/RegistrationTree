@@ -17,6 +17,11 @@ public class BigWarpManager {
     private SpimData movingSource;
     private SpimData fixedSource;
     private BigWarp bw;
+    private Transformer transformer;
+
+    public BigWarpManager(Transformer transformer) {
+        this.transformer = transformer;
+    }
 
     public void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {
         // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
@@ -38,13 +43,13 @@ public class BigWarpManager {
     public void exportBigWarpToCrosshair() {
         // TODO - deal with if fixed/moving same way around, or needs to be swapped
         // TODO - check if type of transform is supported i.e. no thin plate splines!
-        AffineTransform3D bigWarp = bw.affine3d();
-        // transformedSources.get(fixedSourceIndex).setFixedTransform(bigWarp);
+        AffineTransform3D bigWarpTransform = bw.affine3d();
+        transformer.setFixedTransform( bigWarpTransform );
 
         AffineTransform3D identity = new AffineTransform3D();
         identity.identity();
-        // transformedSources.get(movingSourceIndex).setFixedTransform(identity);
-        // bdv.getViewerPanel().requestRepaint();
+        transformer.setMovingTransform( identity );
+        transformer.refreshBdvWindow();
         // TODO - add transform panel too
     }
 

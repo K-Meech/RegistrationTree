@@ -67,16 +67,19 @@ public class RegistrationContextMenu {
         String[] transformTypes = new String[] {Transformer.TransformType.BigWarp.toString(), Transformer.TransformType.Elastix.toString(),
                 Transformer.TransformType.Manual.toString(), Transformer.TransformType.AffineString.toString() };
         gd.addChoice( "Transformation Type", transformTypes, transformTypes[0]);
+        gd.addStringField("Transform name", "");
         gd.showDialog();
 
         if ( !gd.wasCanceled() ) {
             Transformer.TransformType transformType = Transformer.TransformType.valueOf( gd.getNextChoice() );
+            String transformName = gd.getNextString();
 
             switch( transformType ) {
                 case BigWarp:
                     transformer.openBigwarp();
                     // TODO - only if transform was done, and button was pushed
-                    tree.addRegistrationNode(new CrosshairAffineTransform(new AffineTransform3D(), "test1"),
+                    // TODO - put actual transform here
+                    tree.addRegistrationNode(new CrosshairAffineTransform(new AffineTransform3D(), transformName),
                             tree.tree.getSelectionPath());
                     break;
                 case Elastix:

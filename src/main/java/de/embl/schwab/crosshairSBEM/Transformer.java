@@ -91,8 +91,8 @@ public class Transformer {
             this.fixedImage = fixedImage;
             this.movingImage = movingImage;
             registrationTree = new RegistrationTree( this );
-            bigWarpManager = new BigWarpManager();
-            elastixManager = new ElastixManager();
+            bigWarpManager = new BigWarpManager( this );
+            elastixManager = new ElastixManager( );
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -108,6 +108,18 @@ public class Transformer {
 
     public ElastixManager getElastixManager() {
         return elastixManager;
+    }
+
+    public void refreshBdvWindow() {
+        bdv.getViewerPanel().requestRepaint();
+    }
+
+    public void setFixedTransform( AffineTransform3D affine ) {
+        fixedTransformedSource.setFixedTransform( affine );
+    }
+
+    public void setMovingTransform( AffineTransform3D affine ) {
+        movingTransformedSource.setFixedTransform( affine );
     }
 
     public void run() {
