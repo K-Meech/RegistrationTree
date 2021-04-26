@@ -23,6 +23,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 import org.apache.commons.compress.utils.FileNameUtils;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ public class Transformer {
     private RegistrationTree registrationTree;
     private BigWarpManager bigWarpManager;
     private ElastixManager elastixManager;
+    private Cropper cropper;
 
     // String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
     //         "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
@@ -81,12 +83,13 @@ public class Transformer {
 
     public Transformer( File movingImage, File fixedImage ) {
         try {
+            registrationTree = new RegistrationTree( this );
             loadSources(movingImage, fixedImage);
             this.fixedImage = fixedImage;
             this.movingImage = movingImage;
-            registrationTree = new RegistrationTree( this );
             bigWarpManager = new BigWarpManager( this );
             elastixManager = new ElastixManager( this );
+            cropper = new Cropper( this );
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -102,6 +105,10 @@ public class Transformer {
 
     public ElastixManager getElastixManager() {
         return elastixManager;
+    }
+
+    public Cropper getCropper() {
+        return cropper;
     }
 
     public BdvHandle getBdv() {
@@ -234,6 +241,13 @@ public class Transformer {
 
         fixedSource = BdvFunctions.show(fixedSpimData).get(0);
         bdv = fixedSource.getBdvHandle();
+
+        Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
+        Point treeLocation = registrationTree.getLocationOnScreen();
+        viewFrame.setLocation(
+                treeLocation.x + registrationTree.getWidth(),
+                 treeLocation.y );
+
         fixedSource.setDisplayRange(0, 255);
         fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
 

@@ -73,7 +73,6 @@ public class RegistrationTree {
                         tree.setSelectionRow(selRow);
                     }
 
-                    IJ.log("right clik!");
                     popup.showPopupMenu(e.getComponent(), e.getX(), e.getY());
                 }
             }
@@ -108,6 +107,14 @@ public class RegistrationTree {
                 parentNode.getChildCount());
 
         tree.scrollPathToVisible(new TreePath(childNode.getPath()));
+    }
+
+    public Point getLocationOnScreen() {
+        return frame.getLocationOnScreen();
+    }
+
+    public int getWidth() {
+        return frame.getWidth();
     }
 
     public void removeRegistrationNode() {

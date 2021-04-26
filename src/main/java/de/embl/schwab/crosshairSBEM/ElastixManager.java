@@ -141,7 +141,7 @@ public class ElastixManager {
 
     public void writeCroppedAndDownsampledImages() {
         // TODO - let them use full size if want, or re-use previous crops
-        CropperUI cropperUI = new CropperUI( new Cropper( transformer ) );
+        CropperUI cropperUI = new CropperUI( transformer.getCropper() );
         cropperUI.cropDialog( Transformer.ImageType.FIXED, new File(tmpDir) );
         cropperUI.cropDialog( Transformer.ImageType.MOVING, new File(tmpDir) );
     }
