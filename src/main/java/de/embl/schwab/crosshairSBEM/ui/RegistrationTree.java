@@ -34,14 +34,15 @@ public class RegistrationTree {
         panel = new JPanel(new BorderLayout());
 
         // Tree view of Spimdata
+        // TODO - populate with proper initial transform
         DefaultMutableTreeNode top =
-                new DefaultMutableTreeNode("Registrations:");
+                new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "XmlTransform"));
         model = new DefaultTreeModel(top);
         // top.model = model;
 
         DefaultMutableTreeNode category = new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "test1"));
-        DefaultMutableTreeNode subcat = new DefaultMutableTreeNode("yo");
-        DefaultMutableTreeNode category2 = new DefaultMutableTreeNode("test2");
+        DefaultMutableTreeNode subcat = new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "test1-2"));
+        DefaultMutableTreeNode category2 = new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "test2"));
         top.add(category);
         category.add(subcat);
         top.add(category2);

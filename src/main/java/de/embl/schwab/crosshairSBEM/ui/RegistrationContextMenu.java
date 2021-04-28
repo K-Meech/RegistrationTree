@@ -2,6 +2,7 @@ package de.embl.schwab.crosshairSBEM.ui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import de.embl.schwab.crosshairSBEM.CrosshairAffineTransform;
 import de.embl.schwab.crosshairSBEM.DefaultMutableTreeNodeAdapter;
@@ -12,13 +13,11 @@ import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 
 public class RegistrationContextMenu {
 
@@ -56,6 +55,33 @@ public class RegistrationContextMenu {
         // print transform (for node) or for whole chain
 
         // export current chain to xml file (bigstitcher style)
+
+        // load tree from json
+        ActionListener loadTreeListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Thread( () -> {
+                    Gson gson = new GsonBuilder()
+                            .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
+                            .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
+                            .setPrettyPrinting()
+                            .create();
+
+                    try(InputStream inputStream = new FileInputStream( "C:\\Users\\meechan\\Documents\\temp\\still_testing\\test.json" );
+                        JsonReader reader = new JsonReader( new InputStreamReader(inputStream, "UTF-8")) ) {
+                        DefaultMutableTreeNode newTopNode = gson.fromJson(reader, DefaultMutableTreeNode.class);
+
+                        DefaultTreeModel treeModel = (DefaultTreeModel) tree.tree.getModel();
+                        treeModel.setRoot( newTopNode );
+                        treeModel.reload();
+
+                    } catch (IOException exception) {
+                        exception.printStackTrace();
+                    }
+                }).start();
+            }
+        };
+        addPopupAction("Load registration tree", loadTreeListener);
 
         // save tree
         ActionListener saveTreeListener = new ActionListener() {

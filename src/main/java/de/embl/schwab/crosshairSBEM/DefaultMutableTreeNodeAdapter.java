@@ -1,16 +1,11 @@
 package de.embl.schwab.crosshairSBEM;
 
 import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.List;
+import java.util.Iterator;
 
 // based on https://stackoverflow.com/questions/53997112/how-to-serialize-defaultmutabletreenode-java-to-json
 public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMutableTreeNode>, JsonDeserializer<DefaultMutableTreeNode> {
@@ -20,36 +15,31 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
 
     @Override
     public DefaultMutableTreeNode deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-        // double[] rowPackedCopy = (double[])jsonDeserializationContext.deserialize(jsonElement.getAsJsonObject().get("affinetransform3d"), double[].class);
-        // AffineTransform3D at3d = new AffineTransform3D();
-        // at3d.set(rowPackedCopy);
-        // return at3d;
-        //
-        // DefaultMutableTreeNode node = new DefaultMutableTreeNode();
-        // while (in.hasNext()) {
-        //     switch (in.nextName()) {
-        //         case "allowsChildren":
-        //             node.setAllowsChildren(in.nextBoolean());
-        //             break;
-        //         case "userObject":
-        //             node.setUserObject(gson.fromJson(in, AffineTransform3D.class));
-        //             break;
-        //         case "children":
-        //             in.beginArray();
-        //             while (in.hasNext()) {
-        //                 node.add(read(in)); // recursion!
-        //                 // this did also set the parent of the child-node
-        //             }
-        //             in.endArray();
-        //             break;
-        //         default:
-        //             in.skipValue();
-        //             break;
-        //     }
-        // }
-        //
-        // return node;
-        return null;
+
+        JsonObject jobject = jsonElement.getAsJsonObject();
+        Iterator<String> keys = jobject.keySet().iterator();
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode();
+
+        while (keys.hasNext()) {
+            switch (keys.next()) {
+                case "allowsChildren":
+                    node.setAllowsChildren( jobject.get("allowsChildren").getAsBoolean() );
+                    break;
+                case "userObject":
+                    node.setUserObject(jsonDeserializationContext.deserialize( jobject.get("userObject").getAsJsonObject(), CrosshairAffineTransform.class));
+                    break;
+                case "children":
+                    Iterator<JsonElement> children = jobject.get("children").getAsJsonArray().iterator();
+                    while (children.hasNext()) {
+                        node.add( jsonDeserializationContext.deserialize( children.next(), DefaultMutableTreeNode.class )); // recursion!
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return node;
     }
 
     @Override
