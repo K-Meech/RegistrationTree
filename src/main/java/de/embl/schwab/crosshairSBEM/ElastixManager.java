@@ -129,8 +129,7 @@ public class ElastixManager {
                         break;
                 }
 
-                transformer.setTransform(Transformer.ImageType.MOVING, bdvTransform.inverse());
-                transformer.refreshBdvWindow();
+                transformer.showSource( bdvTransform );
 
             } else {
                 //TODO - error?

@@ -349,8 +349,19 @@ public class Transformer {
         }
     }
 
-    public void addSource( Source source ) {
-        BdvStackSource stackSource = BdvFunctions.show(source, BdvOptions.options().addTo(bdv));
+    // Affine is from registration program i.e. defined as fixed to moving space
+    public void showSource( AffineTransform3D affine ) {
+        TransformedSource transformedSource;
+        if (viewSpace == Transformer.ViewSpace.MOVING) {
+            // create a source with that transform and display it
+            transformedSource = new TransformedSource(getSource(Transformer.ImageType.FIXED));
+            transformedSource.setFixedTransform(affine);
+        } else  {
+            transformedSource = new TransformedSource(getSource(Transformer.ImageType.MOVING));
+            transformedSource.setFixedTransform(affine.inverse());
+        }
+
+        BdvStackSource stackSource = BdvFunctions.show(transformedSource, BdvOptions.options().addTo(bdv));
         // TODO - generalise?
         stackSource.setDisplayRange(0, 255);
         refreshBdvWindow();

@@ -44,9 +44,9 @@ public class BigWarpManager {
     public void exportBigWarpToCrosshair() {
         // TODO - deal with if fixed/moving same way around, or needs to be swapped
         // TODO - check if type of transform is supported i.e. no thin plate splines!
+        // TODO - concatenate the chain of transforms
         AffineTransform3D bigWarpTransform = bw.affine3d();
-        transformer.setTransform(Transformer.ImageType.MOVING, bigWarpTransform.inverse());
-        transformer.refreshBdvWindow();
+        transformer.showSource( bigWarpTransform );
     }
 
     public Point getViewerFrameQLocation() {

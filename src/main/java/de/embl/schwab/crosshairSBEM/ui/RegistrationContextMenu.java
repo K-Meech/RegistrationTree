@@ -64,23 +64,10 @@ public class RegistrationContextMenu {
                     for (int i = 1; i< pathNodes.length; i++) {
                         DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
                         AffineTransform3D nodeTransform = ((CrosshairAffineTransform) currentNode.getUserObject()).getAffine();
-
-                        if (viewSpace == Transformer.ViewSpace.MOVING) {
-                            fullTransform.preConcatenate(nodeTransform);
-                        } else {
-                            fullTransform.preConcatenate(nodeTransform.inverse());
-                        }
+                        fullTransform.preConcatenate(nodeTransform);
                     }
 
-                    TransformedSource transformedSource;
-                    if (viewSpace == Transformer.ViewSpace.MOVING) {
-                        // create a source with that transform and display it
-                        transformedSource = new TransformedSource(transformer.getSource(Transformer.ImageType.FIXED));
-                    } else  {
-                        transformedSource = new TransformedSource(transformer.getSource(Transformer.ImageType.MOVING));
-                    }
-
-                   transformer.addSource(transformedSource);
+                    transformer.showSource( fullTransform );
 
                 }).start();
             }
