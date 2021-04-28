@@ -30,8 +30,6 @@ public class RegistrationTree {
 
     public RegistrationTree( Transformer transformer ) {
         this.transformer = transformer;
-        frame = new JFrame("Registrations");
-        panel = new JPanel(new BorderLayout());
 
         // Tree view of Spimdata
         // TODO - populate with proper initial transform
@@ -52,10 +50,6 @@ public class RegistrationTree {
 
         tree = new JTree(model);
         // tree.setCellRenderer(new SourceAndConverterTreeCellRenderer());
-
-        treeView = new JScrollPane(tree);
-
-        panel.add(treeView, BorderLayout.CENTER);
 
         RegistrationContextMenu popup =  new RegistrationContextMenu(this, transformer );
 
@@ -78,19 +72,13 @@ public class RegistrationTree {
             }
         });
 
-        // get the screen size as a java dimension
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    }
 
-        // get a fixed proportion of the height and of the width
-        int height = screenSize.height * 4 / 5;
-        int width = screenSize.width / 6;
-
-        // set the jframe height and width
-        frame.setPreferredSize(new Dimension(width, height));
-
-        frame.add(panel);
-        frame.pack();
-        frame.setVisible(true);
+    public JPanel createTreePanel() {
+        panel = new JPanel(new BorderLayout());
+        treeView = new JScrollPane(tree);
+        panel.add(treeView, BorderLayout.CENTER);
+        return panel;
     }
 
     public void addRegistrationNode( CrosshairAffineTransform affine, TreePath parentPath ) {
@@ -107,14 +95,6 @@ public class RegistrationTree {
                 parentNode.getChildCount());
 
         tree.scrollPathToVisible(new TreePath(childNode.getPath()));
-    }
-
-    public Point getLocationOnScreen() {
-        return frame.getLocationOnScreen();
-    }
-
-    public int getWidth() {
-        return frame.getWidth();
     }
 
     public void removeRegistrationNode() {

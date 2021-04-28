@@ -11,6 +11,7 @@ import bigwarp.BigWarp;
 // import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
+import de.embl.schwab.crosshairSBEM.ui.Ui;
 import itc.commands.BigWarpAffineToTransformixFileCommand;
 import itc.converters.AffineTransform3DToFlatString;
 import itc.transforms.elastix.ElastixTransform;
@@ -61,7 +62,7 @@ public class Transformer {
     private File fixedImage;
     private File movingImage;
 
-    private RegistrationTree registrationTree;
+    private Ui ui;
     private BigWarpManager bigWarpManager;
     private ElastixManager elastixManager;
     private Cropper cropper;
@@ -83,7 +84,7 @@ public class Transformer {
 
     public Transformer( File movingImage, File fixedImage ) {
         try {
-            registrationTree = new RegistrationTree( this );
+            ui = new Ui( this );
             loadSources(movingImage, fixedImage);
             this.fixedImage = fixedImage;
             this.movingImage = movingImage;
@@ -243,9 +244,9 @@ public class Transformer {
         bdv = fixedSource.getBdvHandle();
 
         Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
-        Point treeLocation = registrationTree.getLocationOnScreen();
+        Point treeLocation = ui.getLocationOnScreen();
         viewFrame.setLocation(
-                treeLocation.x + registrationTree.getWidth(),
+                treeLocation.x + ui.getWidth(),
                  treeLocation.y );
 
         fixedSource.setDisplayRange(0, 255);
