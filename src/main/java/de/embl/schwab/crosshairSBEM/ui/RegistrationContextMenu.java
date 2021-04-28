@@ -1,14 +1,24 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonWriter;
 import de.embl.schwab.crosshairSBEM.CrosshairAffineTransform;
+import de.embl.schwab.crosshairSBEM.DefaultMutableTreeNodeAdapter;
 import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.gui.GenericDialog;
 import net.imglib2.realtransform.AffineTransform3D;
+import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 public class RegistrationContextMenu {
 
@@ -43,6 +53,35 @@ public class RegistrationContextMenu {
 
         // delete source with transform (and all that are lower in tree)
 
+        // print transform (for node) or for whole chain
+
+        // export current chain to xml file (bigstitcher style)
+
+        // save tree
+        ActionListener saveTreeListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Thread( () -> {
+                    Gson gson = new GsonBuilder()
+                            .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
+                            .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
+                            .setPrettyPrinting()
+                            .create();
+                    Object topNode = tree.tree.getModel().getRoot();
+
+                    try(OutputStream outputStream = new FileOutputStream( "C:\\Users\\meechan\\Documents\\temp\\still_testing\\test.json" );
+                        JsonWriter writer = new JsonWriter( new OutputStreamWriter(outputStream, "UTF-8")) ) {
+                        writer.setIndent("	");
+                        gson.toJson(topNode, DefaultMutableTreeNode.class,  writer);
+                    } catch (IOException exception) {
+                        exception.printStackTrace();
+                    }
+                }).start();
+            }
+        };
+        addPopupAction("Save registration tree", saveTreeListener);
+
+
         // add transform (can then choose bigwarp or manual or elastix)
         ActionListener addListener = new ActionListener() {
             @Override
@@ -63,6 +102,7 @@ public class RegistrationContextMenu {
     }
 
     public void addTransformDialog () {
+        // TODO - enforce that all transform names are unique
         final GenericDialog gd = new GenericDialog( "Add a new transformation..." );
         String[] transformTypes = new String[] {Transformer.TransformType.BigWarp.toString(), Transformer.TransformType.Elastix.toString(),
                 Transformer.TransformType.Manual.toString(), Transformer.TransformType.AffineString.toString() };

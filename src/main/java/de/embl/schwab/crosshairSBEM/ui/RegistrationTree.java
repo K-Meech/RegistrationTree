@@ -20,6 +20,7 @@ public class RegistrationTree {
     // https://github.com/bigdataviewer/bigdataviewer-playground/blob/e6b93d7d2ac4cb490a9c2a19b813fbe96e640ea5/src/main/java/sc/fiji/bdvpg/scijava/services/ui/SourceAndConverterServiceUI.java#L149
     // https://docs.oracle.com/javase/tutorial/uiswing/components/tree.html
 
+    // TODO - make so can load a transformation tree from file
     JFrame frame;
     JPanel panel;
     JScrollPane treeView;
@@ -28,9 +29,7 @@ public class RegistrationTree {
     Transformer transformer;
 
     public RegistrationTree( Transformer transformer ) {
-
         this.transformer = transformer;
-
         frame = new JFrame("Registrations");
         panel = new JPanel(new BorderLayout());
 

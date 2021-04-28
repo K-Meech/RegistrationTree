@@ -25,6 +25,10 @@ public class Cropper {
         this.transformer = transformer;
     }
 
+    // TODO - make so can re-use crops, and not write the same crop over and over
+    // perhaps crops in top of folder, then one folder per transformation (e.g. elastix or bigwarp) to hold metadata
+    // THen at the end can delete the folder or copy it for reference
+
     public TransformedRealBoxSelectionDialog.Result createTransformedRealBoxSelectionDialog(Transformer.ImageType imageType) {
         // based on calbirated real box stuff here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/boundingbox/BoundingBoxDialog.java#L144
         final AffineTransform3D boxTransform = transformer.getTransform( imageType );

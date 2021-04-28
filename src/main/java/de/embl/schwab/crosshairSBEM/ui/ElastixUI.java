@@ -11,6 +11,8 @@ public class ElastixUI {
 
     private ElastixManager elastixManager;
 
+        // TODO - make it optional whether to overwrite images
+        // Keep elastix metadata from all runs i.e. elastixparameters an transformix files
 
         public ElastixUI( ElastixManager elastixManager ) {
             this.elastixManager = elastixManager;
