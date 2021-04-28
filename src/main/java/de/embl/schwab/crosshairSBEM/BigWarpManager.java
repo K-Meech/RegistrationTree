@@ -25,6 +25,7 @@ public class BigWarpManager {
 
     public void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {
         // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
+        // TODO - make sure it can open from an existing transformed source, and add on top
         try {
             (new RepeatingReleasedEventsFixer()).install();
             BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSource, fixedSource);

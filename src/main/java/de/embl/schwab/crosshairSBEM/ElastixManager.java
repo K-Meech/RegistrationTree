@@ -98,7 +98,7 @@ public class ElastixManager {
             boolean contains = Arrays.stream(supportedTransforms).anyMatch(elastixTransform.Transform::equals);
             if ( contains ) {
 
-                AffineTransform3D bdvTransform;
+                AffineTransform3D bdvTransform = null;
                 switch( elastixTransform.Transform ) {
                     case EULER:
                         // TODO - scaling stuff - how to fix?
@@ -114,7 +114,6 @@ public class ElastixManager {
                         // System.out.println(new AffineTransform3DToFlatString().convert(bdvTransform).getString());
                         break;
                     case SIMILARITY:
-                        // TODO - not implemented yet in itc-converters
                         if ( nDimensions == 2 ) {
                             bdvTransform = ElastixSimilarity2DToAffineTransform3D.convert( (ElastixSimilarityTransform2D) elastixTransform );
                         } else if ( nDimensions == 3 ) {
@@ -129,6 +128,9 @@ public class ElastixManager {
                         }
                         break;
                 }
+
+                transformer.setTransform(Transformer.ImageType.MOVING, bdvTransform.inverse());
+                transformer.refreshBdvWindow();
 
             } else {
                 //TODO - error?
