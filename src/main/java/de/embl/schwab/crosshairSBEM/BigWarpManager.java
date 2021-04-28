@@ -44,13 +44,8 @@ public class BigWarpManager {
         // TODO - deal with if fixed/moving same way around, or needs to be swapped
         // TODO - check if type of transform is supported i.e. no thin plate splines!
         AffineTransform3D bigWarpTransform = bw.affine3d();
-        transformer.setTransform(Transformer.ImageType.FIXED, bigWarpTransform );
-
-        AffineTransform3D identity = new AffineTransform3D();
-        identity.identity();
-        transformer.setTransform(Transformer.ImageType.MOVING, identity );
+        transformer.setTransform(Transformer.ImageType.MOVING, bigWarpTransform.inverse());
         transformer.refreshBdvWindow();
-        // TODO - add transform panel too
     }
 
     public Point getViewerFrameQLocation() {
