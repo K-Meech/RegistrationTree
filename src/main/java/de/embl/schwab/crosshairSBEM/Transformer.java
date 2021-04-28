@@ -51,6 +51,11 @@ public class Transformer {
         MOVING
     }
 
+    public enum ViewSpace {
+        FIXED,
+        MOVING
+    }
+
     private SpimData fixedSpimData;
     private BdvStackSource fixedSource;
     private SpimData movingSpimData;
@@ -66,6 +71,8 @@ public class Transformer {
     private BigWarpManager bigWarpManager;
     private ElastixManager elastixManager;
     private Cropper cropper;
+
+    private ViewSpace viewSpace = ViewSpace.FIXED;
 
     // String[] sourcePaths = new String[] {"C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack.xml",
     //         "C:\\Users\\meechan\\Documents\\sample_register_images\\mri-stack-rotated.xml" };
@@ -106,6 +113,10 @@ public class Transformer {
 
     public ElastixManager getElastixManager() {
         return elastixManager;
+    }
+
+    public ViewSpace getViewSpace() {
+        return viewSpace;
     }
 
     public Cropper getCropper() {
@@ -299,6 +310,13 @@ public class Transformer {
         return spimSource.getNumMipmapLevels();
     }
 
+    public Source getSource( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return ((SourceAndConverter<?>) fixedSource.getSources().get(0) ).getSpimSource();
+        } else {
+            return ((SourceAndConverter<?>) movingSource.getSources().get(0) ).getSpimSource();
+        }
+    }
     public double[] getSourceVoxelSize( ImageType imageType ) {
         if ( imageType == ImageType.FIXED ) {
             return getFullResolutionSourceVoxelSize(fixedSpimData);
@@ -329,6 +347,13 @@ public class Transformer {
         } else {
             return getSourceVoxelDimensions( movingSource, 0 );
         }
+    }
+
+    public void addSource( Source source ) {
+        BdvStackSource stackSource = BdvFunctions.show(source, BdvOptions.options().addTo(bdv));
+        // TODO - generalise?
+        stackSource.setDisplayRange(0, 255);
+        refreshBdvWindow();
     }
 
     public long[] getSourceVoxelDimensions( ImageType imageType, int level ) {

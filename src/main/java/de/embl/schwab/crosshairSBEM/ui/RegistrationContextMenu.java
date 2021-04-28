@@ -1,5 +1,7 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
+import bdv.tools.transformation.TransformedSource;
+import bdv.util.BdvFunctions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -14,6 +16,7 @@ import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -47,6 +50,42 @@ public class RegistrationContextMenu {
 
     private void populateActions() {
         // show source with transform in BDV
+        ActionListener showListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Thread( () -> {
+                    // concatenate transforms up tree dependent on fixed or moving view
+                    Object[] pathNodes = tree.tree.getSelectionPath().getPath();
+                    Transformer.ViewSpace viewSpace = transformer.getViewSpace();
+                    AffineTransform3D fullTransform = new AffineTransform3D();
+
+                    // TODO - for now we ignore the root node, and assume we're adding on top of the xml
+                    // skip root node
+                    for (int i = 1; i< pathNodes.length; i++) {
+                        DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
+                        AffineTransform3D nodeTransform = ((CrosshairAffineTransform) currentNode.getUserObject()).getAffine();
+
+                        if (viewSpace == Transformer.ViewSpace.MOVING) {
+                            fullTransform.preConcatenate(nodeTransform);
+                        } else {
+                            fullTransform.preConcatenate(nodeTransform.inverse());
+                        }
+                    }
+
+                    TransformedSource transformedSource;
+                    if (viewSpace == Transformer.ViewSpace.MOVING) {
+                        // create a source with that transform and display it
+                        transformedSource = new TransformedSource(transformer.getSource(Transformer.ImageType.FIXED));
+                    } else  {
+                        transformedSource = new TransformedSource(transformer.getSource(Transformer.ImageType.MOVING));
+                    }
+
+                   transformer.addSource(transformedSource);
+
+                }).start();
+            }
+        };
+        addPopupAction("Show in Bdv", showListener);
 
         // remove source with transform from BDV
 
