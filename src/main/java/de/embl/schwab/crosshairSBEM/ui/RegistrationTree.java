@@ -29,6 +29,7 @@ public class RegistrationTree {
     Transformer transformer;
 
     TreePath lastSelectedNode;
+    TreePath lastAddedNode;
 
     public RegistrationTree( Transformer transformer ) {
         this.transformer = transformer;
@@ -105,13 +106,21 @@ public class RegistrationTree {
         model.insertNodeInto(childNode, parentNode,
                 parentNode.getChildCount());
 
-        tree.scrollPathToVisible(new TreePath(childNode.getPath()));
+        lastAddedNode = new TreePath(childNode.getPath());
+        tree.scrollPathToVisible(lastAddedNode);
     }
 
     public AffineTransform3D getFullTransformOfSelectedNode() {
+        return getFullTransformOfTreePath( tree.getSelectionPath() );
+    }
+
+    public AffineTransform3D getFullTransformOfLastAddedNode() {
+        return getFullTransformOfTreePath( lastAddedNode );
+    }
+
+    public AffineTransform3D getFullTransformOfTreePath( TreePath path ) {
         // concatenate transforms up tree dependent on fixed or moving view
-        Object[] pathNodes = tree.getSelectionPath().getPath();
-        Transformer.ViewSpace viewSpace = transformer.getViewSpace();
+        Object[] pathNodes = path.getPath();
         AffineTransform3D fullTransform = new AffineTransform3D();
 
         // TODO - for now we ignore the root node, and assume we're adding on top of the xml
@@ -119,7 +128,7 @@ public class RegistrationTree {
         for (int i = 1; i< pathNodes.length; i++) {
             DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
             AffineTransform3D nodeTransform = ((CrosshairAffineTransform) currentNode.getUserObject()).getAffine();
-            fullTransform.preConcatenate(nodeTransform);
+            fullTransform.concatenate(nodeTransform);
         }
 
         return fullTransform;

@@ -6,6 +6,7 @@ import bdv.viewer.Source;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
 import de.embl.schwab.crosshairSBEM.ui.BigWarpUI;
+import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -38,8 +39,15 @@ public class BigWarpManager {
     public void openBigwarpAtSelectedNode( String transformName ) {
         this.transformName = transformName;
         AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfSelectedNode();
-        TransformedSource transformedSource = transformer.createTransformedSource( Transformer.ImageType.MOVING, fullTransform );
-        openBigWarp( transformedSource, transformer.getSource(Transformer.ImageType.FIXED), transformer.getSourcePath(Transformer.ImageType.MOVING));
+        TransformedSource movingSource = transformer.createTransformedSource( Transformer.ImageType.MOVING, fullTransform);
+        Source fixedSource = transformer.getSource(Transformer.ImageType.FIXED);
+        openBigWarp( movingSource, fixedSource, transformer.getSourcePath(Transformer.ImageType.MOVING) );
+
+
+        // SpimData movingSpimData = transformer.getSpimData(Transformer.ImageType.MOVING, fullTransform);
+        // SpimData fixedSpimData = transformer.getSpimData( Transformer.ImageType.FIXED );
+        //
+        // openBigwarp( movingSpimData, fixedSpimData, transformer.getSourcePath(Transformer.ImageType.MOVING));
     }
 
     private void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {
@@ -77,8 +85,9 @@ public class BigWarpManager {
         // TODO - check if type of transform is supported i.e. no thin plate splines!
         // TODO - concatenate the chain of transforms
         AffineTransform3D bigWarpTransform = bw.affine3d();
-        transformer.showSource( bigWarpTransform );
-        transformer.getUi().getTree().addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bigWarpTransform, transformName));
+        RegistrationTree tree = transformer.getUi().getTree();
+        tree.addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bigWarpTransform, transformName));
+        transformer.showSource( tree.getFullTransformOfLastAddedNode() );
     }
 
     public Point getViewerFrameQLocation() {
