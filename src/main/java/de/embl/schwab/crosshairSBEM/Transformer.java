@@ -119,6 +119,10 @@ public class Transformer {
         return viewSpace;
     }
 
+    public Ui getUi() {
+        return ui;
+    }
+
     public Cropper getCropper() {
         return cropper;
     }
@@ -227,9 +231,7 @@ public class Transformer {
         // heart of the manual transformer
     }
 
-    public void openBigwarp() {
-        bigWarpManager.openBigwarp(movingSpimData, fixedSpimData, movingImage.getAbsolutePath());
-    }
+
 
     public void openElastix() {
         new ElastixUI( elastixManager );
@@ -317,6 +319,23 @@ public class Transformer {
             return ((SourceAndConverter<?>) movingSource.getSources().get(0) ).getSpimSource();
         }
     }
+
+    public SpimData getSpimData( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return fixedSpimData;
+        } else {
+            return movingSpimData;
+        }
+    }
+
+    public String getSourcePath( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return fixedImage.getAbsolutePath();
+        } else {
+            return movingImage.getAbsolutePath();
+        }
+    }
+
     public double[] getSourceVoxelSize( ImageType imageType ) {
         if ( imageType == ImageType.FIXED ) {
             return getFullResolutionSourceVoxelSize(fixedSpimData);
@@ -350,15 +369,27 @@ public class Transformer {
     }
 
     // Affine is from registration program i.e. defined as fixed to moving space
+    public TransformedSource createTransformedSource( ImageType imageType, AffineTransform3D affine ) {
+        TransformedSource transformedSource;
+        if ( imageType == ImageType.FIXED ) {
+            transformedSource = new TransformedSource(getSource(ImageType.FIXED));
+            transformedSource.setFixedTransform(affine);
+        } else {
+            transformedSource = new TransformedSource(getSource(ImageType.MOVING));
+            transformedSource.setFixedTransform(affine.inverse());
+        }
+
+        return transformedSource;
+    }
+
+    // Affine is from registration program i.e. defined as fixed to moving space
     public void showSource( AffineTransform3D affine ) {
         TransformedSource transformedSource;
         if (viewSpace == Transformer.ViewSpace.MOVING) {
             // create a source with that transform and display it
-            transformedSource = new TransformedSource(getSource(Transformer.ImageType.FIXED));
-            transformedSource.setFixedTransform(affine);
+            transformedSource = createTransformedSource( ImageType.FIXED, affine );
         } else  {
-            transformedSource = new TransformedSource(getSource(Transformer.ImageType.MOVING));
-            transformedSource.setFixedTransform(affine.inverse());
+            transformedSource = createTransformedSource( ImageType.MOVING, affine );
         }
 
         BdvStackSource stackSource = BdvFunctions.show(transformedSource, BdvOptions.options().addTo(bdv));

@@ -1,6 +1,8 @@
 package de.embl.schwab.crosshairSBEM;
 
 import bdv.ij.util.ProgressWriterIJ;
+import bdv.tools.transformation.TransformedSource;
+import bdv.viewer.Source;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
 import de.embl.schwab.crosshairSBEM.ui.BigWarpUI;
@@ -11,6 +13,7 @@ import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 
 public class BigWarpManager {
 
@@ -19,16 +22,44 @@ public class BigWarpManager {
     private BigWarp bw;
     private Transformer transformer;
 
+    private String transformName;
+
     public BigWarpManager(Transformer transformer) {
         this.transformer = transformer;
     }
 
-    public void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {
+    public void openBigwarp( String transformName ) {
+        this.transformName = transformName;
+        openBigwarp( transformer.getSpimData(Transformer.ImageType.MOVING),
+                transformer.getSpimData(Transformer.ImageType.FIXED),
+                transformer.getSourcePath(Transformer.ImageType.MOVING) );
+    }
+
+    public void openBigwarpAtSelectedNode( String transformName ) {
+        this.transformName = transformName;
+        AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfSelectedNode();
+        TransformedSource transformedSource = transformer.createTransformedSource( Transformer.ImageType.MOVING, fullTransform );
+        openBigWarp( transformedSource, transformer.getSource(Transformer.ImageType.FIXED), transformer.getSourcePath(Transformer.ImageType.MOVING));
+    }
+
+    private void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {
         // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
         // TODO - make sure it can open from an existing transformed source, and add on top
-        try {
             (new RepeatingReleasedEventsFixer()).install();
             BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSource, fixedSource);
+            openBigwarp( bigWarpData, movingSourcePath );
+    }
+
+    private void openBigWarp(Source movingSource, Source fixedSource, String movingSourcePath ) {
+        (new RepeatingReleasedEventsFixer()).install();
+        Source[] fixedSources = new Source[] {fixedSource};
+        Source[] movingSources = new Source[]{movingSource};
+        BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSources, fixedSources, new String[] {"moving", "fixed"});
+        openBigwarp( bigWarpData, movingSourcePath );
+    }
+
+    private void openBigwarp( BigWarp.BigWarpData<?> bigWarpData, String movingSourcePath ) {
+        try {
             bw = new BigWarp(bigWarpData, "Big Warp", new ProgressWriterIJ());
             bw.getViewerFrameP().getViewerPanel().requestRepaint();
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
@@ -47,6 +78,7 @@ public class BigWarpManager {
         // TODO - concatenate the chain of transforms
         AffineTransform3D bigWarpTransform = bw.affine3d();
         transformer.showSource( bigWarpTransform );
+        transformer.getUi().getTree().addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bigWarpTransform, transformName));
     }
 
     public Point getViewerFrameQLocation() {

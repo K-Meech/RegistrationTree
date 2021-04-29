@@ -54,21 +54,8 @@ public class RegistrationContextMenu {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread( () -> {
-                    // concatenate transforms up tree dependent on fixed or moving view
-                    Object[] pathNodes = tree.tree.getSelectionPath().getPath();
-                    Transformer.ViewSpace viewSpace = transformer.getViewSpace();
-                    AffineTransform3D fullTransform = new AffineTransform3D();
-
-                    // TODO - for now we ignore the root node, and assume we're adding on top of the xml
-                    // skip root node
-                    for (int i = 1; i< pathNodes.length; i++) {
-                        DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
-                        AffineTransform3D nodeTransform = ((CrosshairAffineTransform) currentNode.getUserObject()).getAffine();
-                        fullTransform.preConcatenate(nodeTransform);
-                    }
-
+                    AffineTransform3D fullTransform = tree.getFullTransformOfSelectedNode();
                     transformer.showSource( fullTransform );
-
                 }).start();
             }
         };
@@ -168,11 +155,8 @@ public class RegistrationContextMenu {
 
             switch( transformType ) {
                 case BigWarp:
-                    transformer.openBigwarp();
-                    // TODO - only if transform was done, and button was pushed
-                    // TODO - put actual transform here
-                    tree.addRegistrationNode(new CrosshairAffineTransform(new AffineTransform3D(), transformName),
-                            tree.tree.getSelectionPath());
+                    tree.updateLastSelectedNode();
+                    transformer.getBigWarpManager().openBigwarpAtSelectedNode( transformName );
                     break;
                 case Elastix:
                     transformer.openElastix();

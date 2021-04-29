@@ -51,6 +51,10 @@ public class Ui {
         return transformer;
     }
 
+    public RegistrationTree getTree() {
+        return tree;
+    }
+
     private JPanel createViewPanel() {
         JPanel viewPanel = new JPanel();
         viewPanel.setLayout(new GridLayout(1, 2));
