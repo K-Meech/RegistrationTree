@@ -9,6 +9,7 @@ import de.embl.schwab.crosshairSBEM.Cropper;
 import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.gui.GenericDialog;
 import net.imglib2.FinalRealInterval;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 
@@ -23,37 +24,60 @@ public class CropperUI {
         this.cropper = cropper;
     }
 
-    // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
-    // TODO - y dim seems integer??
-    public void cropDialog( Transformer.ImageType imageType, File tempdir ) {
+    public String cropDialog( Transformer.ImageType imageType ) {
+        String[] currentCrops;
+        if (imageType == Transformer.ImageType.FIXED) {
+            currentCrops = cropper.getFixedImageCropNames();
+        } else {
+            currentCrops = cropper.getMovingImageCropNames();
+        }
 
-        // https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java
-        //https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L58
+        if (currentCrops.length > 0) {
 
-        TransformedRealBoxSelectionDialog.Result result = cropper.createTransformedRealBoxSelectionDialog( imageType );
+            final GenericDialog gd = new GenericDialog("Choose crop...");
 
-        if ( result != null ) {
-            int level = chooseSourceLevel( imageType );
-            cropper.writeCrop(result, imageType, level, tempdir );
+            String[] choices = new String[currentCrops.length + 1];
+            choices[0] = "Make new crop";
+            for (int i = 0; i < currentCrops.length; i++) {
+                choices[i] = currentCrops[i];
+            }
+            gd.addChoice("Crop:", choices, choices[0]);
+            gd.showDialog();
+
+            if (!gd.wasCanceled()) {
+                int choice = gd.getNextChoiceIndex();
+                if (choice == 0) {
+                    String cropName = cropNameDialog();
+                    cropper.crop(imageType, cropName );
+                    return cropName;
+                } else {
+                    return choices[choice];
+                }
+            } else {
+                throw new RuntimeException();
+            }
+        } else {
+            // TODO - properly handle if window are cnacelled
+            String cropName = cropNameDialog();
+            cropper.crop(imageType, cropName);
+            return cropName;
         }
     }
 
-    // saving to mhd - https://github.com/embl-cba/elastixWrapper/blob/edb37861b497747217a8e9dd9e579fd8d8a325bb/src/main/java/de/embl/cba/elastixwrapper/elastix/ElastixWrapper.java#L479
-    // save to mhd AND enable choosing of name
+    public String cropNameDialog( ) {
 
-    private int chooseSourceLevel( Transformer.ImageType imageType ) throws RuntimeException {
-        final GenericDialog gd = new GenericDialog( "Choose resolution level..." );
-
-        String[] resolutionLevels = cropper.getLevelsArray( imageType );
-        gd.addChoice("Level:", resolutionLevels, resolutionLevels[0]);
+        final GenericDialog gd = new GenericDialog("Crop name...");
+        gd.addStringField( "Crop name", "");
         gd.showDialog();
 
-        if ( !gd.wasCanceled() ) {
-            return gd.getNextChoiceIndex();
+        if (!gd.wasCanceled()) {
+            return gd.getNextString();
         } else {
-            throw new RuntimeException();
+            return null;
         }
     }
+
+
 
 
 }

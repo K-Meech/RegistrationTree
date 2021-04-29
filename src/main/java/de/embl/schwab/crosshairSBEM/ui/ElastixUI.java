@@ -39,11 +39,36 @@ public class ElastixUI {
             String[] resamplers = new String[]{ElastixParameters.FINAL_RESAMPLER_LINEAR,
                     ElastixParameters.FINAL_RESAMPLER_NEAREST_NEIGHBOR};
             gd.addChoice("Final resampler", resamplers, elastixManager.finalResampler );
+            gd.addCheckbox("Crop Fixed Image", true );
+            gd.addCheckbox("Crop Moving Image", true);
+            gd.addCheckbox( "Downsample Fixed Image", true);
+            gd.addCheckbox( "Downsample Moving Image", true );
             gd.showDialog();
 
             if (!gd.wasCanceled()) {
                 setParametersInElastixManager( gd );
+
+                // crop fixed image
+                if ( gd.getNextBoolean() ) {
+                    elastixManager.cropFixedImage();
+                }
+
+                // crop moving image
+                if ( gd.getNextBoolean() ) {
+                    elastixManager.cropMovingImage();
+                }
+
+                // downsample fixed image
+                if ( gd.getNextBoolean() ) {
+
+                }
+
+                // downsample moving image
+                if ( gd.getNextBoolean() ) {
+
+                }
                 elastixManager.writeCroppedAndDownsampledImages();
+                elastixManager.writeInitialTransformixFile();
                 elastixManager.callElastix();
             }
 

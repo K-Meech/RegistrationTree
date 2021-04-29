@@ -1,11 +1,14 @@
 package de.embl.schwab.crosshairSBEM;
 
+import bdv.tools.transformation.TransformedSource;
 import de.embl.cba.elastixwrapper.commandline.ElastixCaller;
 import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.crosshairSBEM.ui.CropperUI;
+import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import ij.IJ;
+import itc.commands.BigWarpAffineToTransformixFileCommand;
 import itc.converters.*;
 import itc.transforms.elastix.*;
 import itc.utilities.TransformUtils;
@@ -50,6 +53,10 @@ public class ElastixManager {
         this.fixedImageFilePaths = new ArrayList<>();
         this.movingImageFilePaths = new ArrayList<>();
         this.transformer = transformer;
+    }
+
+    public void openElastix() {
+        new ElastixUI( this );
     }
 
     private void createElastixParameterFile() {
@@ -140,11 +147,35 @@ public class ElastixManager {
         }
     }
 
+    public void cropFixedImage() {
+            new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.FIXED);
+    }
+
+    public void cropMovingImage() {
+        new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.MOVING);
+    }
+
     public void writeCroppedAndDownsampledImages() {
         // TODO - let them use full size if want, or re-use previous crops
         CropperUI cropperUI = new CropperUI( transformer.getCropper() );
-        cropperUI.cropDialog( Transformer.ImageType.FIXED, new File(tmpDir) );
-        cropperUI.cropDialog( Transformer.ImageType.MOVING, new File(tmpDir) );
+        // cropperUI.cropBox( Transformer.ImageType.FIXED, new File(tmpDir) );
+        // cropperUI.cropBox( Transformer.ImageType.MOVING, new File(tmpDir) );
+    }
+
+    private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
+        AffineTransform3D fixedTransform = new AffineTransform3D();
+        fixedSource.getFixedTransform( fixedTransform );
+        BigWarpAffineToTransformixFileCommand bw = new BigWarpAffineToTransformixFileCommand();
+        bw.affineTransformString = new AffineTransform3DToFlatString().convert(fixedTransform).getString();
+        bw.affineTransformUnit = "micrometer";
+        bw.interpolation = ElastixTransform.FINAL_LINEAR_INTERPOLATOR;
+        bw.transformationOutputFile = new File("Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\targeting_test\\elastix_flipped_xray_to_em\\initialTransform.txt");
+        bw.targetImageFile = new File("Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\targeting_test\\elastix_flipped_xray_to_em\\065_9_high_res.tif");
+        bw.run();
+    }
+
+    public void writeInitialTransformixFile() {
+
     }
 
     public void callElastix() {
