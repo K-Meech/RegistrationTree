@@ -9,10 +9,10 @@ import de.embl.schwab.crosshairSBEM.ui.CropperUI;
 import de.embl.schwab.crosshairSBEM.ui.DownsamplingUI;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import ij.IJ;
-import itc.commands.BigWarpAffineToTransformixFileCommand;
 import itc.converters.*;
 import itc.transforms.elastix.*;
 import itc.utilities.TransformUtils;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.log.StderrLogService;
 
@@ -165,34 +165,66 @@ public class ElastixManager {
     }
 
     public void writeImages( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
+
+        fixedImageFilePaths = new ArrayList<>();
+        movingImageFilePaths = new ArrayList<>();
+
         Exporter exporter = transformer.getExporter();
         if ( fixedCropName == null ) {
             exporter.writeImage( Transformer.ImageType.FIXED, fixedLevel, new File(tmpDir) );
+            fixedImageFilePaths.add(
+                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.FIXED, fixedLevel) + ".mhd" ).getAbsolutePath() );
         } else {
             exporter.writeImage( Transformer.ImageType.FIXED, fixedCropName, fixedLevel, new File(tmpDir) );
+            fixedImageFilePaths.add(
+                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.FIXED, fixedLevel, fixedCropName) + ".mhd" ).getAbsolutePath() );
         }
 
         if ( movingCropName == null ) {
             exporter.writeImage( Transformer.ImageType.MOVING, movingLevel, new File(tmpDir) );
+            movingImageFilePaths.add(
+                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.MOVING, movingLevel) + ".mhd" ).getAbsolutePath() );
         } else {
             exporter.writeImage( Transformer.ImageType.MOVING, movingCropName, movingLevel, new File(tmpDir) );
+            movingImageFilePaths.add(
+                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.MOVING, movingLevel, movingCropName) + ".mhd" ).getAbsolutePath() );
         }
     }
 
-    private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){
-        AffineTransform3D fixedTransform = new AffineTransform3D();
-        fixedSource.getFixedTransform( fixedTransform );
+    public void writeInitialTransformixFile( String fixedCropName, String movingCropName ) {
+
+        Cropper cropper = transformer.getCropper();
+        AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfLastSelectedNode();
+
+        // Handle any crops. Recall fullTransform is given from fixed to moving space, so we have to translate
+        // to the new fixed image crop, then do the fullTransform from the nodes, then translate by the negative of
+        // the new moving image crop
+        if ( fixedCropName != null ) {
+            RealInterval cropInterval = cropper.getImageCropInterval( Transformer.ImageType.FIXED, fixedCropName );
+            AffineTransform3D translationFixedCrop = new AffineTransform3D();
+            translationFixedCrop.translate( cropInterval.minAsDoubleArray() );
+            fullTransform.preConcatenate( translationFixedCrop );
+        }
+
+        if ( movingCropName != null ) {
+            RealInterval cropInterval = cropper.getImageCropInterval( Transformer.ImageType.MOVING, movingCropName );
+            double[] cropMin = cropInterval.minAsDoubleArray();
+            for (int i = 0; i< cropMin.length; i++) {
+                cropMin[i] = -1*cropMin[i];
+            }
+            AffineTransform3D translationMovingCrop = new AffineTransform3D();
+            translationMovingCrop.translate( cropMin );
+            fullTransform.concatenate( translationMovingCrop );
+        }
+
         BigWarpAffineToTransformixFileCommand bw = new BigWarpAffineToTransformixFileCommand();
-        bw.affineTransformString = new AffineTransform3DToFlatString().convert(fixedTransform).getString();
+        bw.affineTransformString = new AffineTransform3DToFlatString().convert(fullTransform).getString();
+        // TODO - make general, or tell people they have to use microns
         bw.affineTransformUnit = "micrometer";
         bw.interpolation = ElastixTransform.FINAL_LINEAR_INTERPOLATOR;
-        bw.transformationOutputFile = new File("Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\targeting_test\\elastix_flipped_xray_to_em\\initialTransform.txt");
-        bw.targetImageFile = new File("Z:\\Kimberly\\Projects\\Targeting_SBEM\\Data\\Derived\\65.9_was_mislabelled_as_65.6\\targeting_test\\elastix_flipped_xray_to_em\\065_9_high_res.tif");
+        bw.transformationOutputFile = new File(tmpDir, "initialTransform.txt");
+        bw.targetImageFile = new File(fixedImageFilePaths.get(0));
         bw.run();
-    }
-
-    public void writeInitialTransformixFile() {
-
     }
 
     public void callElastix() {

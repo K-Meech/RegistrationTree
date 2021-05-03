@@ -24,7 +24,7 @@ import java.util.Set;
 public class Cropper {
 
     private Transformer transformer;
-    // crops in physical space
+    // crops in pixel space
     private Map<String, RealInterval> fixedImageCrops;
     private Map<String, RealInterval> movingImageCrops;
 
@@ -115,16 +115,16 @@ public class Cropper {
 
     private FinalRealInterval getRangeInterval(Transformer.ImageType imageType)
     {
-        double[] max = new double[ 3 ];
+        // double[] max = new double[ 3 ];
 
         long[] sourceVoxelDimensions = transformer.getSourceVoxelDimensions( imageType );
-        double[] sourceVoxelSize = transformer.getSourceVoxelSize( imageType );
-        for ( int i = 0; i < sourceVoxelSize.length; i++ ) {
-            max[i] = sourceVoxelDimensions[i] * sourceVoxelSize[i];
-        }
+        // double[] sourceVoxelSize = transformer.getSourceVoxelSize( imageType );
+        // for ( int i = 0; i < sourceVoxelSize.length; i++ ) {
+        //     max[i] = sourceVoxelDimensions[i] * sourceVoxelSize[i];
+        // }
         return Intervals.createMinMaxReal(
                 0, 0, 0,
-                max[0], max[1], max[2]);
+                sourceVoxelDimensions[0], sourceVoxelDimensions[1], sourceVoxelDimensions[2]);
     }
 
     public boolean doesCropExist( String cropName, Transformer.ImageType imageType, String dir ) {

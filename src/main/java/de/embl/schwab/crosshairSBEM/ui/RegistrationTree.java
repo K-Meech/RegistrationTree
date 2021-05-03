@@ -118,6 +118,8 @@ public class RegistrationTree {
         return getFullTransformOfTreePath( lastAddedNode );
     }
 
+    public AffineTransform3D getFullTransformOfLastSelectedNode() { return getFullTransformOfTreePath( lastSelectedNode ); }
+
     public AffineTransform3D getFullTransformOfTreePath( TreePath path ) {
         // concatenate transforms up tree dependent on fixed or moving view
         Object[] pathNodes = path.getPath();

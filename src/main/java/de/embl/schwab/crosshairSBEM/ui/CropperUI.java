@@ -27,27 +27,27 @@ public class CropperUI {
     public String cropDialog( Transformer.ImageType imageType ) {
         String[] currentCrops;
         if (imageType == Transformer.ImageType.FIXED) {
-            currentCrops = cropper.getFixedImageCropNames();
+            currentCrops = cropper.getImageCropNames( Transformer.ImageType.FIXED );
         } else {
-            currentCrops = cropper.getMovingImageCropNames();
+            currentCrops = cropper.getImageCropNames( Transformer.ImageType.MOVING );
         }
 
         if (currentCrops.length > 0) {
 
-            final GenericDialog gd = new GenericDialog("Choose crop...");
+            final GenericDialog gd = new GenericDialog("Choose crop for " + imageType.name() );
 
             String[] choices = new String[currentCrops.length + 1];
             choices[0] = "Make new crop";
             for (int i = 0; i < currentCrops.length; i++) {
                 choices[i] = currentCrops[i];
             }
-            gd.addChoice("Crop:", choices, choices[0]);
+            gd.addChoice("Crop for " + imageType.name(), choices, choices[0]);
             gd.showDialog();
 
             if (!gd.wasCanceled()) {
                 int choice = gd.getNextChoiceIndex();
                 if (choice == 0) {
-                    String cropName = cropNameDialog();
+                    String cropName = cropNameDialog( imageType );
                     cropper.crop(imageType, cropName );
                     return cropName;
                 } else {
@@ -58,16 +58,16 @@ public class CropperUI {
             }
         } else {
             // TODO - properly handle if window are cnacelled
-            String cropName = cropNameDialog();
+            String cropName = cropNameDialog( imageType );
             cropper.crop(imageType, cropName);
             return cropName;
         }
     }
 
-    public String cropNameDialog( ) {
+    public String cropNameDialog( Transformer.ImageType imageType ) {
 
-        final GenericDialog gd = new GenericDialog("Crop name...");
-        gd.addStringField( "Crop name", "");
+        final GenericDialog gd = new GenericDialog("Crop name for " + imageType.name() );
+        gd.addStringField( "Crop name for " + imageType.name(), "");
         gd.showDialog();
 
         if (!gd.wasCanceled()) {

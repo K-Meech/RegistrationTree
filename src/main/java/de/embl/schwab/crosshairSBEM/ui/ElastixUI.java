@@ -73,8 +73,7 @@ public class ElastixUI {
                 }
 
                 elastixManager.writeImages( fixedCropName, movingCropName, fixedLevel, movingLevel );
-
-                elastixManager.writeInitialTransformixFile();
+                elastixManager.writeInitialTransformixFile( fixedCropName, movingCropName );
                 elastixManager.callElastix();
             }
 
@@ -110,10 +109,7 @@ public class ElastixUI {
             elastixManager.numSpatialSamples = (int) gd.getNextNumber();
             elastixManager.gaussianSmoothingSigmas = gd.getNextString();
 
-            elastixManager.fixedImageFilePaths.add(
-                    new File( elastixManager.tmpDir, Transformer.ImageType.FIXED.name() + ".mhd" ).getAbsolutePath() );
-            elastixManager.movingImageFilePaths.add(
-                    new File( elastixManager.tmpDir, Transformer.ImageType.MOVING.name() + ".mhd").getAbsolutePath() );
+
         }
 
 

@@ -159,6 +159,7 @@ public class RegistrationContextMenu {
                     transformer.getBigWarpManager().openBigwarpAtSelectedNode( transformName );
                     break;
                 case Elastix:
+                    tree.updateLastSelectedNode();
                     transformer.getElastixManager().openElastix();
                     // TODO - only if transform was done, and button was pushed
                     // TODO - put actual transform here

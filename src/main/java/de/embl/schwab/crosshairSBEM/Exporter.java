@@ -24,11 +24,11 @@ public class Exporter {
         this.cropper = cropper;
     }
 
-    private String makeImageName (Transformer.ImageType imageType, int level) {
+    public String makeImageName (Transformer.ImageType imageType, int level) {
         return imageType.name() + "_" + String.valueOf( level );
     }
 
-    private String makeImageName (Transformer.ImageType imageType, int level, String cropName ) {
+    public String makeImageName (Transformer.ImageType imageType, int level, String cropName ) {
         return makeImageName( imageType, level ) + "_" + cropName;
     }
 
@@ -38,12 +38,13 @@ public class Exporter {
 
         // TODO - warn that time series are not supported
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
-        RealInterval cropInterval = cropper.getImageCropInterval( imageType, cropName );
+        Interval voxelCropInterval = toVoxelInterval( cropper.getImageCropInterval( imageType, cropName ) );
 
+        // NOT necessary??? As now we use a voxel interval
         // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
         // i.e. get voxel size at that level, and use it to get a voxel interval
-        double[] downsampledVoxelSize = transformer.getSourceVoxelSize( imageType, level );
-        Interval voxelCropInterval = toVoxelInterval( cropInterval, downsampledVoxelSize );
+        // double[] downsampledVoxelSize = transformer.getSourceVoxelSize( imageType, level );
+        // Interval voxelCropInterval = toVoxelInterval( cropInterval, downsampledVoxelSize );
 
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
@@ -71,6 +72,10 @@ public class Exporter {
         if ( !imageExists( imageName, tempDir) ) {
             ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");
             System.out.println(imp.getBitDepth());
+
+            // TODO - have to carry across calibration here, and unit??? Do we have to force mm  units here?
+            // see how t's staging works
+
             MetaImage_Writer writer = new MetaImage_Writer();
 
             String filenameWithExtension = imageName + ".mhd";
@@ -80,6 +85,21 @@ public class Exporter {
 
     private boolean imageExists( String imageName, File tempDir ) {
         return new File(tempDir, imageName + ".mhd").exists();
+    }
+
+    public static Interval toVoxelInterval(
+            RealInterval interval )
+    {
+        final long[] min = new long[ 3 ];
+        final long[] max = new long[ 3 ];
+
+        for ( int d = 0; d < 3; d++ )
+        {
+            min[ d ] = Math.round( interval.realMin( d ) );
+            max[ d ] = Math.round( interval.realMax( d ) );
+        }
+
+        return new FinalInterval( min, max );
     }
 
     public static Interval toVoxelInterval(

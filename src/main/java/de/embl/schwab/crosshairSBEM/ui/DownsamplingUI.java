@@ -13,10 +13,10 @@ public class DownsamplingUI {
     }
 
     public int chooseSourceLevel( Transformer.ImageType imageType ) throws RuntimeException {
-        final GenericDialog gd = new GenericDialog( "Choose resolution level..." );
+        final GenericDialog gd = new GenericDialog( "Choose resolution level of " + imageType.name() );
 
         String[] resolutionLevels = downsampler.getLevelsArray( imageType );
-        gd.addChoice("Level:", resolutionLevels, resolutionLevels[0]);
+        gd.addChoice("Resolution level of " + imageType.name(), resolutionLevels, resolutionLevels[0]);
         gd.showDialog();
 
         if ( !gd.wasCanceled() ) {

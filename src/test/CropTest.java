@@ -12,7 +12,7 @@ public class CropTest {
         Transformer transformer = new Transformer( movingImage, fixedImage );
         Cropper cropper = new Cropper( transformer );
         // cropper.createTransformedRealBoxSelectionDialog(Transformer.ImageType.FIXED);
-        transformer.getElastixManager().writeCroppedAndDownsampledImages();
+        // transformer.getElastixManager().writeCroppedAndDownsampledImages();
 
     }
 }
