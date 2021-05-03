@@ -76,6 +76,7 @@ public class Transformer {
     private ElastixManager elastixManager;
     private Cropper cropper;
     private Downsampler downsampler;
+    private Exporter exporter;
 
     private ViewSpace viewSpace = ViewSpace.FIXED;
     ArrayList<String> sourceNames = new ArrayList<>();
@@ -96,6 +97,7 @@ public class Transformer {
             elastixManager = new ElastixManager( this );
             cropper = new Cropper( this );
             downsampler = new Downsampler( this );
+            exporter = new Exporter( this, cropper );
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -123,6 +125,14 @@ public class Transformer {
 
     public Cropper getCropper() {
         return cropper;
+    }
+
+    public Downsampler getDownsampler() {
+        return downsampler;
+    }
+
+    public Exporter getExporter() {
+        return exporter;
     }
 
     public BdvHandle getBdv() {

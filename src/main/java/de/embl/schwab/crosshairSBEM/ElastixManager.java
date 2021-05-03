@@ -6,6 +6,7 @@ import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.crosshairSBEM.ui.CropperUI;
+import de.embl.schwab.crosshairSBEM.ui.DownsamplingUI;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import ij.IJ;
 import itc.commands.BigWarpAffineToTransformixFileCommand;
@@ -147,19 +148,35 @@ public class ElastixManager {
         }
     }
 
-    public void cropFixedImage() {
-            new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.FIXED);
+    public int downsampleFixedImage() {
+        return new DownsamplingUI( transformer.getDownsampler() ).chooseSourceLevel(Transformer.ImageType.FIXED);
     }
 
-    public void cropMovingImage() {
-        new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.MOVING);
+    public int downsampleMovingImage() {
+        return new DownsamplingUI( transformer.getDownsampler() ).chooseSourceLevel(Transformer.ImageType.MOVING);
     }
 
-    public void writeCroppedAndDownsampledImages() {
-        // TODO - let them use full size if want, or re-use previous crops
-        CropperUI cropperUI = new CropperUI( transformer.getCropper() );
-        // cropperUI.cropBox( Transformer.ImageType.FIXED, new File(tmpDir) );
-        // cropperUI.cropBox( Transformer.ImageType.MOVING, new File(tmpDir) );
+    public String cropFixedImage() {
+            return new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.FIXED);
+    }
+
+    public String cropMovingImage() {
+        return new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.MOVING);
+    }
+
+    public void writeImages( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
+        Exporter exporter = transformer.getExporter();
+        if ( fixedCropName == null ) {
+            exporter.writeImage( Transformer.ImageType.FIXED, fixedLevel, new File(tmpDir) );
+        } else {
+            exporter.writeImage( Transformer.ImageType.FIXED, fixedCropName, fixedLevel, new File(tmpDir) );
+        }
+
+        if ( movingCropName == null ) {
+            exporter.writeImage( Transformer.ImageType.MOVING, movingLevel, new File(tmpDir) );
+        } else {
+            exporter.writeImage( Transformer.ImageType.MOVING, movingCropName, movingLevel, new File(tmpDir) );
+        }
     }
 
     private void writeFixedTransformToTransformixFile( TransformedSource<?> fixedSource ){

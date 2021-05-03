@@ -50,20 +50,20 @@ public class Cropper {
         return stringArray;
     }
 
-    public String[] getFixedImageCropNames() {
-        return setToString( fixedImageCrops.keySet() );
+    public String[] getImageCropNames( Transformer.ImageType imageType ) {
+        if (imageType == Transformer.ImageType.FIXED ) {
+            return setToString( fixedImageCrops.keySet() );
+        } else {
+            return setToString( movingImageCrops.keySet() );
+        }
     }
 
-    public String[] getMovingImageCropNames() {
-        return setToString( movingImageCrops.keySet() );
-    }
-
-    public RealInterval getFixedImageCrop(String name ) {
-        return fixedImageCrops.get( name );
-    }
-
-    public RealInterval getMovingImageCrop( String name ) {
-        return movingImageCrops.get( name );
+    public RealInterval getImageCropInterval( Transformer.ImageType imageType, String name ) {
+        if (imageType == Transformer.ImageType.FIXED ) {
+            return fixedImageCrops.get( name );
+        } else {
+            return movingImageCrops.get( name );
+        }
     }
 
     // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
@@ -125,6 +125,21 @@ public class Cropper {
         return Intervals.createMinMaxReal(
                 0, 0, 0,
                 max[0], max[1], max[2]);
+    }
+
+    public boolean doesCropExist( String cropName, Transformer.ImageType imageType, String dir ) {
+
+        boolean cropInList = false;
+        if ( imageType == Transformer.ImageType.FIXED ) {
+            cropInList = fixedImageCrops.containsKey( cropName );
+        } else {
+            cropInList = movingImageCrops.containsKey( cropName );
+        }
+
+        boolean fileExists = new File( dir, imageType.name() + "_" + cropName + ".mhd" ).exists();
+
+        return cropInList && fileExists;
+
     }
 
 

@@ -12,7 +12,7 @@ public class DownsamplingUI {
         this.downsampler = downsampler;
     }
 
-    private int chooseSourceLevel( Transformer.ImageType imageType ) throws RuntimeException {
+    public int chooseSourceLevel( Transformer.ImageType imageType ) throws RuntimeException {
         final GenericDialog gd = new GenericDialog( "Choose resolution level..." );
 
         String[] resolutionLevels = downsampler.getLevelsArray( imageType );

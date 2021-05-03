@@ -48,26 +48,32 @@ public class ElastixUI {
             if (!gd.wasCanceled()) {
                 setParametersInElastixManager( gd );
 
+                String fixedCropName = null;
+                String movingCropName = null;
                 // crop fixed image
                 if ( gd.getNextBoolean() ) {
-                    elastixManager.cropFixedImage();
+                    fixedCropName = elastixManager.cropFixedImage();
                 }
 
                 // crop moving image
                 if ( gd.getNextBoolean() ) {
-                    elastixManager.cropMovingImage();
+                    movingCropName = elastixManager.cropMovingImage();
                 }
 
+                int fixedLevel = 0;
+                int movingLevel = 0;
                 // downsample fixed image
                 if ( gd.getNextBoolean() ) {
-
+                    fixedLevel = elastixManager.downsampleFixedImage();
                 }
 
                 // downsample moving image
                 if ( gd.getNextBoolean() ) {
-
+                    movingLevel = elastixManager.downsampleMovingImage();
                 }
-                elastixManager.writeCroppedAndDownsampledImages();
+
+                elastixManager.writeImages( fixedCropName, movingCropName, fixedLevel, movingLevel );
+
                 elastixManager.writeInitialTransformixFile();
                 elastixManager.callElastix();
             }
