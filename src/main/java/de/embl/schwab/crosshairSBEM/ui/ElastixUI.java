@@ -75,6 +75,7 @@ public class ElastixUI {
                 elastixManager.writeImages( fixedCropName, movingCropName, fixedLevel, movingLevel );
                 elastixManager.writeInitialTransformixFile( fixedCropName, movingCropName );
                 elastixManager.callElastix();
+                elastixManager.exportElastixResultToCrosshair( fixedCropName, movingCropName );
             }
 
         }

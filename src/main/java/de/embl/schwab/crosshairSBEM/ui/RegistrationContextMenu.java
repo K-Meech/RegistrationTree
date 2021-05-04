@@ -160,11 +160,7 @@ public class RegistrationContextMenu {
                     break;
                 case Elastix:
                     tree.updateLastSelectedNode();
-                    transformer.getElastixManager().openElastix();
-                    // TODO - only if transform was done, and button was pushed
-                    // TODO - put actual transform here
-                    tree.addRegistrationNode(new CrosshairAffineTransform(new AffineTransform3D(), transformName),
-                            tree.tree.getSelectionPath());
+                    transformer.getElastixManager().openElastix( transformName );
                     break;
                 case Manual:
                     break;

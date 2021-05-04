@@ -8,6 +8,7 @@ import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.crosshairSBEM.ui.CropperUI;
 import de.embl.schwab.crosshairSBEM.ui.DownsamplingUI;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
+import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import ij.IJ;
 import ij.ImagePlus;
 import itc.converters.*;
@@ -46,6 +47,8 @@ public class ElastixManager {
     private final String AFFINE = "AffineTransform";
     private final String SPLINE = "BSplineTransform";
 
+    private String transformName;
+
 
     // TODO - add back translation support? Doesn't appear to be class in itc converters for this?
     private String[] supportedTransforms = new String[] { EULER, SIMILARITY, AFFINE };
@@ -59,7 +62,8 @@ public class ElastixManager {
         this.transformer = transformer;
     }
 
-    public void openElastix() {
+    public void openElastix( String transformName ) {
+        this.transformName = transformName;
         new ElastixUI( this );
     }
 
@@ -101,7 +105,7 @@ public class ElastixManager {
         return elastixSettings;
     }
 
-    private void exportElastixResultToCrosshair() {
+    public void exportElastixResultToCrosshair( String fixedCropName, String movingCropName ) {
         File transformResultFile = new File( tmpDir, "TransformParameters.0.txt" );
         try {
             ElastixTransform elastixTransform = ElastixTransform.load( transformResultFile );
@@ -119,10 +123,6 @@ public class ElastixManager {
                         } else if ( nDimensions == 3 ) {
                             bdvTransform = ElastixEuler3DToAffineTransform3D.convert((ElastixEulerTransform3D) elastixTransform);
                         }
-
-                        // the elastix transform is in mm units, we convert to what was used for rest of images (microns)
-                        // bdvTransform = TransformUtils.scaleAffineTransform3DUnits( bdvTransform, new double[]{ 1000, 1000, 1000 } );
-                        // System.out.println(new AffineTransform3DToFlatString().convert(bdvTransform).getString());
                         break;
                     case SIMILARITY:
                         if ( nDimensions == 2 ) {
@@ -140,8 +140,10 @@ public class ElastixManager {
                         break;
                 }
 
-                transformer.showSource( bdvTransform );
-
+                bdvTransform = compensateForCrop( fixedCropName, movingCropName, bdvTransform, CropCompensateDirection.FromElastix );
+                RegistrationTree tree = transformer.getUi().getTree();
+                tree.addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bdvTransform, transformName));
+                transformer.showSource( tree.getFullTransformOfLastAddedNode() );
             } else {
                 //TODO - error?
                 IJ.log( "Transform type unsupported in Crosshair!");
@@ -194,10 +196,14 @@ public class ElastixManager {
         }
     }
 
-    public void writeInitialTransformixFile( String fixedCropName, String movingCropName ) {
+    enum CropCompensateDirection {
+        ToElastix,
+        FromElastix
+    }
+
+    private AffineTransform3D compensateForCrop( String fixedCropName, String movingCropName, AffineTransform3D affine, CropCompensateDirection cropCompensateDirection ) {
 
         Cropper cropper = transformer.getCropper();
-        AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfLastSelectedNode();
 
         // Handle any crops. Recall fullTransform is given from fixed to moving space, so we have to translate
         // to the new fixed image crop, then do the fullTransform from the nodes, then translate by the negative of
@@ -205,20 +211,36 @@ public class ElastixManager {
         if ( fixedCropName != null ) {
             RealInterval cropInterval = cropper.getImageCropInterval( Transformer.ImageType.FIXED, fixedCropName );
             AffineTransform3D translationFixedCrop = new AffineTransform3D();
-            translationFixedCrop.translate( cropInterval.minAsDoubleArray() );
-            fullTransform.preConcatenate( translationFixedCrop );
+            double[] cropMin = cropInterval.minAsDoubleArray();
+            if ( cropCompensateDirection == CropCompensateDirection.FromElastix ) {
+                for (int i = 0; i< cropMin.length; i++) {
+                    cropMin[i] = -1*cropMin[i];
+                }
+            }
+            translationFixedCrop.translate( cropMin );
+            affine.preConcatenate( translationFixedCrop );
         }
 
         if ( movingCropName != null ) {
             RealInterval cropInterval = cropper.getImageCropInterval( Transformer.ImageType.MOVING, movingCropName );
             double[] cropMin = cropInterval.minAsDoubleArray();
-            for (int i = 0; i< cropMin.length; i++) {
-                cropMin[i] = -1*cropMin[i];
+            if ( cropCompensateDirection == CropCompensateDirection.ToElastix ) {
+                for (int i = 0; i< cropMin.length; i++) {
+                    cropMin[i] = -1*cropMin[i];
+                }
             }
             AffineTransform3D translationMovingCrop = new AffineTransform3D();
             translationMovingCrop.translate( cropMin );
-            fullTransform.concatenate( translationMovingCrop );
+            affine.concatenate( translationMovingCrop );
         }
+
+        return affine;
+    }
+
+    public void writeInitialTransformixFile( String fixedCropName, String movingCropName ) {
+
+        AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfLastSelectedNode();
+        fullTransform = compensateForCrop( fixedCropName, movingCropName, fullTransform, CropCompensateDirection.ToElastix );
 
         ImagePlus fixedImage = transformer.getExporter().getLastFixedImageWritten();
         Double[] voxelSpacingsMillimeter = new Double[3];
@@ -252,8 +274,5 @@ public class ElastixManager {
     public void callElastix() {
         createElastixParameterFile();
         new ElastixCaller( createElastixSettings() ).callElastix();
-
-        // TODO - check it waits for finish
-        exportElastixResultToCrosshair();
     }
 }
