@@ -2,7 +2,9 @@ package de.embl.schwab.crosshairSBEM;
 
 import bdv.tools.transformation.TransformedSource;
 import de.embl.cba.elastixwrapper.commandline.ElastixCaller;
+import de.embl.cba.elastixwrapper.commandline.TransformixCaller;
 import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
+import de.embl.cba.elastixwrapper.commandline.settings.TransformixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.crosshairSBEM.ui.CropperUI;
@@ -48,6 +50,9 @@ public class ElastixManager {
     private final String SPLINE = "BSplineTransform";
 
     private String transformName;
+
+    // for debugging purposes, if flipped to true it will keep all output files i.e. all transformix file runs
+    private boolean debug = true;
 
 
     // TODO - add back translation support? Doesn't appear to be class in itc converters for this?
@@ -103,6 +108,17 @@ public class ElastixManager {
         elastixSettings.elastixDirectory = elastixDirectory;
         elastixSettings.initialTransformationFilePath = "";
         return elastixSettings;
+    }
+
+    private TransformixSettings createTransformixSettings() {
+        TransformixSettings transformixSettings = new TransformixSettings();
+        transformixSettings.elastixDirectory = elastixDirectory;
+        transformixSettings.headless = false;
+        transformixSettings.movingImageFilePath = movingImageFilePaths.get(0);
+        transformixSettings.logService = new StderrLogService();
+        // TODO - read sensible default for this
+        transformixSettings.numWorkers = 1;
+        return transformixSettings;
     }
 
     public void exportElastixResultToCrosshair( String fixedCropName, String movingCropName ) {
@@ -274,5 +290,30 @@ public class ElastixManager {
     public void callElastix() {
         createElastixParameterFile();
         new ElastixCaller( createElastixSettings() ).callElastix();
+
+        if ( debug ) {
+            callTransformix();
+        }
+    }
+
+    private void callTransformix() {
+        TransformixSettings transformixSettings;
+        transformixSettings = createTransformixSettings();
+        File initialTransformDir =  new File(tmpDir, "initialTransformTransformix");
+        if (!initialTransformDir.exists()) {
+            initialTransformDir.mkdirs();
+        }
+        transformixSettings.tmpDir = initialTransformDir.getAbsolutePath();
+        transformixSettings.transformationFilePath = new File(tmpDir, "initialTransform.txt").getAbsolutePath();
+        new TransformixCaller(transformixSettings).callTransformix();
+
+        transformixSettings = createTransformixSettings();
+        File fullTransformDir = new File(tmpDir, "fullTransformTransformix");
+        if (!fullTransformDir.exists()) {
+            fullTransformDir.mkdirs();
+        }
+        transformixSettings.tmpDir = fullTransformDir.getAbsolutePath();
+        transformixSettings.transformationFilePath = new File(tmpDir, "TransformParameters.0.txt").getAbsolutePath();
+        new TransformixCaller(transformixSettings).callTransformix();
     }
 }
