@@ -45,7 +45,7 @@ public class Exporter {
 
         // TODO - warn that time series are not supported
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
-        Interval voxelCropInterval = toVoxelInterval( cropper.getImageCropInterval( imageType, cropName ) );
+        Interval voxelCropInterval = toVoxelInterval( cropper.getImageCropInterval( imageType, cropName ), transformer.getSourceVoxelDimensions( imageType, level ) );
 
         // NOT necessary??? As now we use a voxel interval
         // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
@@ -81,6 +81,9 @@ public class Exporter {
         // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
         // sensibly or just clip?
         if ( !imageExists( imageName, tempDir) ) {
+            // TODO - seems to be a one off error here if I crop and wack the sliders up to full i.e. image dimensions become
+            // 1 larger on every axis than the actual image
+            // is this because bdv indexes from 0?
             ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");
             imp.getCalibration().pixelWidth = voxelSize[0];
             imp.getCalibration().pixelHeight = voxelSize[1];
@@ -103,16 +106,28 @@ public class Exporter {
         return new File(tempDir, imageName + ".mhd").exists();
     }
 
-    public static Interval toVoxelInterval(
-            RealInterval interval )
+    public static Interval toVoxelInterval( RealInterval interval, long[] imageVoxelDimensions )
     {
         final long[] min = new long[ 3 ];
         final long[] max = new long[ 3 ];
 
         for ( int d = 0; d < 3; d++ )
         {
-            min[ d ] = Math.round( interval.realMin( d ) );
-            max[ d ] = Math.round( interval.realMax( d ) );
+            long minVal = Math.round( interval.realMin(d) );
+            long maxVal = Math.round( interval.realMax( d ) );
+
+            if ( minVal < 0 ) {
+                min[d] = 0;
+            } else {
+                min[d] = minVal;
+            }
+
+            // have to take away one as imglib2 indexes from 0
+            if ( maxVal > imageVoxelDimensions[d] - 1 ) {
+                max[d] = imageVoxelDimensions[d] - 1;
+            } else {
+                max[d] = maxVal;
+            }
         }
 
         return new FinalInterval( min, max );

@@ -122,9 +122,11 @@ public class Cropper {
         // for ( int i = 0; i < sourceVoxelSize.length; i++ ) {
         //     max[i] = sourceVoxelDimensions[i] * sourceVoxelSize[i];
         // }
+
+        // have to remove 1 from each dimension as imglib2 indexes from 0
         return Intervals.createMinMaxReal(
                 0, 0, 0,
-                sourceVoxelDimensions[0], sourceVoxelDimensions[1], sourceVoxelDimensions[2]);
+                sourceVoxelDimensions[0] - 1, sourceVoxelDimensions[1] - 1, sourceVoxelDimensions[2] - 1);
     }
 
     public boolean doesCropExist( String cropName, Transformer.ImageType imageType, String dir ) {
