@@ -17,11 +17,18 @@ public class Exporter {
     private Transformer transformer;
     private Cropper cropper;
 
+    // store this as I need the parameters to
+    private ImagePlus lastFixedImageWritten;
+
     // TODO - check for bad names in all dialogs e.g. spaces
 
     public Exporter( Transformer transformer, Cropper cropper ) {
         this.transformer = transformer;
         this.cropper = cropper;
+    }
+
+    public ImagePlus getLastFixedImageWritten() {
+        return lastFixedImageWritten;
     }
 
     public String makeImageName (Transformer.ImageType imageType, int level) {
@@ -49,12 +56,14 @@ public class Exporter {
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
 
-        writeImage( crop, makeImageName(imageType, level, cropName), tempDir );
+        writeImage( imageType, crop, transformer.getSourceVoxelSize(imageType, level), transformer.getSourceUnit( imageType ),
+                makeImageName(imageType, level, cropName), tempDir );
     }
 
     public void writeImage( Transformer.ImageType imageType, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( imageType, 0 );
-        writeImage( rai, makeImageName( imageType, 0 ), tempDir );
+        writeImage( imageType, rai, transformer.getSourceVoxelSize(imageType, 0), transformer.getSourceUnit( imageType ),
+                makeImageName( imageType, 0 ), tempDir );
     }
 
     public void writeImage( Transformer.ImageType imageType, String cropName, File tempDir ) {
@@ -63,23 +72,30 @@ public class Exporter {
 
     public void writeImage( Transformer.ImageType imageType, int level, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
-        writeImage( rai, makeImageName( imageType, level ), tempDir );
+        writeImage( imageType, rai,  transformer.getSourceVoxelSize(imageType, level),
+                transformer.getSourceUnit( imageType ), makeImageName( imageType, level ), tempDir );
     }
 
-    private void writeImage( RandomAccessibleInterval rai,  String imageName, File tempDir ) {
+    private void writeImage(Transformer.ImageType imageType,
+                            RandomAccessibleInterval rai, double[] voxelSize, String unit, String imageName, File tempDir ) {
         // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
         // sensibly or just clip?
         if ( !imageExists( imageName, tempDir) ) {
             ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");
+            imp.getCalibration().pixelWidth = voxelSize[0];
+            imp.getCalibration().pixelHeight = voxelSize[1];
+            imp.getCalibration().pixelDepth = voxelSize[2];
+            imp.getCalibration().setUnit( unit );
             System.out.println(imp.getBitDepth());
-
-            // TODO - have to carry across calibration here, and unit??? Do we have to force mm  units here?
-            // see how t's staging works
 
             MetaImage_Writer writer = new MetaImage_Writer();
 
             String filenameWithExtension = imageName + ".mhd";
             writer.save(imp, tempDir.getAbsolutePath(), filenameWithExtension);
+
+            if ( imageType == Transformer.ImageType.FIXED ) {
+                lastFixedImageWritten = imp;
+            }
         }
     }
 

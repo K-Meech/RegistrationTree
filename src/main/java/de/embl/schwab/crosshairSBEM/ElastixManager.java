@@ -9,6 +9,7 @@ import de.embl.schwab.crosshairSBEM.ui.CropperUI;
 import de.embl.schwab.crosshairSBEM.ui.DownsamplingUI;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import ij.IJ;
+import ij.ImagePlus;
 import itc.converters.*;
 import itc.transforms.elastix.*;
 import itc.utilities.TransformUtils;
@@ -22,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import static itc.utilities.Units.MILLIMETER;
 
 public class ElastixManager {
     // TODO - remove these file deafults
@@ -217,14 +220,33 @@ public class ElastixManager {
             fullTransform.concatenate( translationMovingCrop );
         }
 
-        BigWarpAffineToTransformixFileCommand bw = new BigWarpAffineToTransformixFileCommand();
-        bw.affineTransformString = new AffineTransform3DToFlatString().convert(fullTransform).getString();
-        // TODO - make general, or tell people they have to use microns
-        bw.affineTransformUnit = "micrometer";
-        bw.interpolation = ElastixTransform.FINAL_LINEAR_INTERPOLATOR;
-        bw.transformationOutputFile = new File(tmpDir, "initialTransform.txt");
-        bw.targetImageFile = new File(fixedImageFilePaths.get(0));
-        bw.run();
+        ImagePlus fixedImage = transformer.getExporter().getLastFixedImageWritten();
+        Double[] voxelSpacingsMillimeter = new Double[3];
+        voxelSpacingsMillimeter[0] = fixedImage.getCalibration().pixelWidth;
+        voxelSpacingsMillimeter[1] = fixedImage.getCalibration().pixelHeight;
+        voxelSpacingsMillimeter[2] = fixedImage.getCalibration().pixelDepth;
+
+        // TODO - warn only works with 3D, no time
+        Integer[] dimensionsPixels = new Integer[3];
+        for (int i = 0; i<3; i++) {
+            dimensionsPixels[i] = fixedImage.getDimensions()[i];
+        }
+
+        int bitDepth = fixedImage.getBitDepth();
+
+        // We write directly with whatever spatial units are currently used. No conversion to mm.
+        // Elastix will assume they are in mm, but this is no problem as long as all images use the same units
+        // and we don't do any scaling on saving and loading
+        final ElastixAffineTransform3D elastixAffineTransform3D =
+                new BigWarpAffineToElastixAffineTransform3D().convert(
+                        fullTransform,
+                        voxelSpacingsMillimeter,
+                        dimensionsPixels,
+                        bitDepth,
+                        ElastixTransform.FINAL_LINEAR_INTERPOLATOR,
+                        MILLIMETER );
+
+        elastixAffineTransform3D.save( new File(tmpDir, "initialTransform.txt").getAbsolutePath() );
     }
 
     public void callElastix() {
