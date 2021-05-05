@@ -219,6 +219,22 @@ public class ElastixManager {
                                                  int movingLevel, AffineTransform3D affine, CropCompensateDirection cropCompensateDirection ) {
 
         Cropper cropper = transformer.getCropper();
+        AffineTransform3D fullTransform = new AffineTransform3D();
+
+        if ( movingCropName != null ) {
+            RealInterval cropInterval = cropper.getImageCropPhysicalSpace( Transformer.ImageType.MOVING, movingCropName, movingLevel );
+            double[] cropMin = cropInterval.minAsDoubleArray();
+            if ( cropCompensateDirection == CropCompensateDirection.ToElastix ) {
+                for (int i = 0; i< cropMin.length; i++) {
+                    cropMin[i] = -1*cropMin[i];
+                }
+            }
+            AffineTransform3D translationMovingCrop = new AffineTransform3D();
+            translationMovingCrop.translate( cropMin );
+            fullTransform.concatenate( translationMovingCrop );
+        }
+
+        fullTransform.concatenate( affine );
 
         // Handle any crops. Recall fullTransform is given from fixed to moving space, so we have to translate
         // to the new fixed image crop, then do the fullTransform from the nodes, then translate by the negative of
@@ -233,23 +249,10 @@ public class ElastixManager {
                 }
             }
             translationFixedCrop.translate( cropMin );
-            affine.preConcatenate( translationFixedCrop );
+            fullTransform.concatenate( translationFixedCrop );
         }
 
-        if ( movingCropName != null ) {
-            RealInterval cropInterval = cropper.getImageCropPhysicalSpace( Transformer.ImageType.MOVING, movingCropName, movingLevel );
-            double[] cropMin = cropInterval.minAsDoubleArray();
-            if ( cropCompensateDirection == CropCompensateDirection.ToElastix ) {
-                for (int i = 0; i< cropMin.length; i++) {
-                    cropMin[i] = -1*cropMin[i];
-                }
-            }
-            AffineTransform3D translationMovingCrop = new AffineTransform3D();
-            translationMovingCrop.translate( cropMin );
-            affine.concatenate( translationMovingCrop );
-        }
-
-        return affine;
+        return fullTransform;
     }
 
     public void writeInitialTransformixFile( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
