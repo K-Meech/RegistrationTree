@@ -104,7 +104,7 @@ public class ElastixManager {
         elastixSettings.headless = false;
         elastixSettings.logService = new StderrLogService();
         elastixSettings.elastixDirectory = elastixDirectory;
-        elastixSettings.initialTransformationFilePath = "";
+        elastixSettings.initialTransformationFilePath = new File(tmpDir, "initialTransform.txt").getAbsolutePath();
         return elastixSettings;
     }
 
