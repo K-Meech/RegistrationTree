@@ -1,12 +1,9 @@
 package de.embl.schwab.crosshairSBEM;
 
-import bdv.tools.boundingbox.TransformedRealBoxSelectionDialog;
 import de.embl.cba.metaimage_io.MetaImage_Writer;
 import ij.ImagePlus;
-import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealInterval;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.view.Views;
 
@@ -45,7 +42,7 @@ public class Exporter {
 
         // TODO - warn that time series are not supported
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
-        Interval voxelCropInterval = toVoxelInterval( cropper.getImageCropInterval( imageType, cropName ), transformer.getSourceVoxelDimensions( imageType, level ) );
+        Interval voxelCropInterval = cropper.getImageCropIntervalVoxelSpace( imageType, cropName, level );
 
         // NOT necessary??? As now we use a voxel interval
         // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
@@ -106,47 +103,6 @@ public class Exporter {
         return new File(tempDir, imageName + ".mhd").exists();
     }
 
-    public static Interval toVoxelInterval( RealInterval interval, long[] imageVoxelDimensions )
-    {
-        final long[] min = new long[ 3 ];
-        final long[] max = new long[ 3 ];
 
-        for ( int d = 0; d < 3; d++ )
-        {
-            long minVal = Math.round( interval.realMin(d) );
-            long maxVal = Math.round( interval.realMax( d ) );
-
-            if ( minVal < 0 ) {
-                min[d] = 0;
-            } else {
-                min[d] = minVal;
-            }
-
-            // have to take away one as imglib2 indexes from 0
-            if ( maxVal > imageVoxelDimensions[d] - 1 ) {
-                max[d] = imageVoxelDimensions[d] - 1;
-            } else {
-                max[d] = maxVal;
-            }
-        }
-
-        return new FinalInterval( min, max );
-    }
-
-    public static Interval toVoxelInterval(
-            RealInterval interval,
-            double[] voxelSize )
-    {
-        final long[] min = new long[ 3 ];
-        final long[] max = new long[ 3 ];
-
-        for ( int d = 0; d < 3; d++ )
-        {
-            min[ d ] = Math.round( interval.realMin( d ) / voxelSize[ d ] );
-            max[ d ] = Math.round( interval.realMax( d ) / voxelSize[ d ] );
-        }
-
-        return new FinalInterval( min, max );
-    }
 
 }

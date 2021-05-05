@@ -1,6 +1,5 @@
 package de.embl.schwab.crosshairSBEM;
 
-import bdv.tools.transformation.TransformedSource;
 import de.embl.cba.elastixwrapper.commandline.ElastixCaller;
 import de.embl.cba.elastixwrapper.commandline.TransformixCaller;
 import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
@@ -15,7 +14,6 @@ import ij.IJ;
 import ij.ImagePlus;
 import itc.converters.*;
 import itc.transforms.elastix.*;
-import itc.utilities.TransformUtils;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.log.StderrLogService;
@@ -121,7 +119,7 @@ public class ElastixManager {
         return transformixSettings;
     }
 
-    public void exportElastixResultToCrosshair( String fixedCropName, String movingCropName ) {
+    public void exportElastixResultToCrosshair( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
         File transformResultFile = new File( tmpDir, "TransformParameters.0.txt" );
         try {
             ElastixTransform elastixTransform = ElastixTransform.load( transformResultFile );
@@ -156,7 +154,7 @@ public class ElastixManager {
                         break;
                 }
 
-                bdvTransform = compensateForCrop( fixedCropName, movingCropName, bdvTransform, CropCompensateDirection.FromElastix );
+                bdvTransform = compensateForCrop( fixedCropName, movingCropName, fixedLevel, movingLevel, bdvTransform, CropCompensateDirection.FromElastix );
                 RegistrationTree tree = transformer.getUi().getTree();
                 tree.addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bdvTransform, transformName));
                 transformer.showSource( tree.getFullTransformOfLastAddedNode() );
@@ -217,7 +215,8 @@ public class ElastixManager {
         FromElastix
     }
 
-    private AffineTransform3D compensateForCrop( String fixedCropName, String movingCropName, AffineTransform3D affine, CropCompensateDirection cropCompensateDirection ) {
+    private AffineTransform3D compensateForCrop( String fixedCropName, String movingCropName, int fixedLevel,
+                                                 int movingLevel, AffineTransform3D affine, CropCompensateDirection cropCompensateDirection ) {
 
         Cropper cropper = transformer.getCropper();
 
@@ -225,7 +224,7 @@ public class ElastixManager {
         // to the new fixed image crop, then do the fullTransform from the nodes, then translate by the negative of
         // the new moving image crop
         if ( fixedCropName != null ) {
-            RealInterval cropInterval = cropper.getImageCropInterval( Transformer.ImageType.FIXED, fixedCropName );
+            RealInterval cropInterval = cropper.getImageCropPhysicalSpace( Transformer.ImageType.FIXED, fixedCropName,fixedLevel );
             AffineTransform3D translationFixedCrop = new AffineTransform3D();
             double[] cropMin = cropInterval.minAsDoubleArray();
             if ( cropCompensateDirection == CropCompensateDirection.FromElastix ) {
@@ -238,7 +237,7 @@ public class ElastixManager {
         }
 
         if ( movingCropName != null ) {
-            RealInterval cropInterval = cropper.getImageCropInterval( Transformer.ImageType.MOVING, movingCropName );
+            RealInterval cropInterval = cropper.getImageCropPhysicalSpace( Transformer.ImageType.MOVING, movingCropName, movingLevel );
             double[] cropMin = cropInterval.minAsDoubleArray();
             if ( cropCompensateDirection == CropCompensateDirection.ToElastix ) {
                 for (int i = 0; i< cropMin.length; i++) {
@@ -253,10 +252,10 @@ public class ElastixManager {
         return affine;
     }
 
-    public void writeInitialTransformixFile( String fixedCropName, String movingCropName ) {
+    public void writeInitialTransformixFile( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
 
         AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfLastSelectedNode();
-        fullTransform = compensateForCrop( fixedCropName, movingCropName, fullTransform, CropCompensateDirection.ToElastix );
+        fullTransform = compensateForCrop( fixedCropName, movingCropName, fixedLevel, movingLevel, fullTransform, CropCompensateDirection.ToElastix );
 
         ImagePlus fixedImage = transformer.getExporter().getLastFixedImageWritten();
         Double[] voxelSpacingsMillimeter = new Double[3];

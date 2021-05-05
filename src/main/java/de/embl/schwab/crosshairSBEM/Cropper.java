@@ -24,7 +24,7 @@ import java.util.Set;
 public class Cropper {
 
     private Transformer transformer;
-    // crops in pixel space
+    // crops in pixel space of full-resolution
     private Map<String, RealInterval> fixedImageCrops;
     private Map<String, RealInterval> movingImageCrops;
 
@@ -58,13 +58,38 @@ public class Cropper {
         }
     }
 
-    public RealInterval getImageCropInterval( Transformer.ImageType imageType, String name ) {
-        if (imageType == Transformer.ImageType.FIXED ) {
-            return fixedImageCrops.get( name );
-        } else {
-            return movingImageCrops.get( name );
-        }
+    // rounded to nearest full voxel at full-resolution
+    public Interval getImageCropIntervalVoxelSpace(Transformer.ImageType imageType, String name ) {
+            return getVoxelInterval( name, imageType, 0);
     }
+
+    // rounded to nearest full voxel at resolution level
+    public Interval getImageCropIntervalVoxelSpace(Transformer.ImageType imageType, String name, int level ) {
+        return getVoxelInterval( name, imageType, level );
+    }
+
+    public RealInterval getImageCropPhysicalSpace( Transformer.ImageType imageType, String name, int level ) {
+
+        Interval voxelCrop = getImageCropIntervalVoxelSpace( imageType, name, level );
+        double[] intervalMax = voxelCrop.maxAsDoubleArray();
+        double[] intervalMin = voxelCrop.minAsDoubleArray();
+
+        double[] voxelSizeAtLevel;
+        if ( level != 0 ) {
+            voxelSizeAtLevel = transformer.getSourceVoxelSize(imageType, level);
+        } else {
+            voxelSizeAtLevel = transformer.getSourceVoxelSize( imageType );
+        }
+
+        // get interval in physical space
+        for (int i = 0; i<voxelSizeAtLevel.length; i++) {
+            intervalMax[i] = intervalMax[i] * voxelSizeAtLevel[i];
+            intervalMin[i] = intervalMin[i] * voxelSizeAtLevel[i];
+        }
+
+        return new FinalRealInterval(intervalMin, intervalMax);
+    }
+
 
     // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
     // TODO - y dim seems integer??
@@ -142,6 +167,64 @@ public class Cropper {
 
         return cropInList && fileExists;
 
+    }
+
+    public Interval getVoxelInterval( String cropName, Transformer.ImageType imageType, int level )
+    {
+        RealInterval voxelCropIntervalFullRes = null;
+        if (imageType == Transformer.ImageType.FIXED ) {
+            voxelCropIntervalFullRes =  fixedImageCrops.get( cropName );
+        } else {
+            voxelCropIntervalFullRes = movingImageCrops.get( cropName );
+        }
+
+        double[] intervalMax = voxelCropIntervalFullRes.maxAsDoubleArray();
+        double[] intervalMin = voxelCropIntervalFullRes.minAsDoubleArray();
+
+        // convert crop to physical space, then to pixel space of relevant level
+        if ( level != 0 ) {
+
+            // get interval in physical space
+            double[] voxelSizeFullRes = transformer.getSourceVoxelSize( imageType );
+            for (int i = 0; i<voxelSizeFullRes.length; i++) {
+                intervalMax[i] = intervalMax[i] * voxelSizeFullRes[i];
+                intervalMin[i] = intervalMin[i] * voxelSizeFullRes[i];
+            }
+
+            // get interval in voxel space at the chosen level
+            double[] voxelSizeAtLevel = transformer.getSourceVoxelSize( imageType, level );
+            for (int i = 0; i<voxelSizeAtLevel.length; i++) {
+                intervalMax[i] = intervalMax[i] / voxelSizeAtLevel[i];
+                intervalMin[i] = intervalMin[i] / voxelSizeAtLevel[i];
+            }
+
+        }
+
+        // round to nearest voxel, ensuring stays in range of image data
+        final long[] min = new long[ 3 ];
+        final long[] max = new long[ 3 ];
+        long[] voxelDimensionsAtLevel = transformer.getSourceVoxelDimensions( imageType, level );
+
+        for ( int d = 0; d < 3; d++ )
+        {
+            long minVal = Math.round( intervalMin[d] );
+            long maxVal = Math.round( intervalMax[d] );
+
+            if ( minVal < 0 ) {
+                min[d] = 0;
+            } else {
+                min[d] = minVal;
+            }
+
+            // have to take away one as imglib2 indexes from 0
+            if ( maxVal > voxelDimensionsAtLevel[d] - 1 ) {
+                max[d] = voxelDimensionsAtLevel[d] - 1;
+            } else {
+                max[d] = maxVal;
+            }
+        }
+
+        return new FinalInterval( min, max );
     }
 
 
