@@ -78,7 +78,8 @@ public class Transformer {
     private Downsampler downsampler;
     private Exporter exporter;
 
-    private ViewSpace viewSpace = ViewSpace.FIXED;
+    // private ViewSpace viewSpace = ViewSpace.FIXED;
+    private ViewSpace viewSpace = ViewSpace.MOVING;
     ArrayList<String> sourceNames = new ArrayList<>();
     ArrayList<TransformedSource<?>> transformedSources = new ArrayList<>();
 

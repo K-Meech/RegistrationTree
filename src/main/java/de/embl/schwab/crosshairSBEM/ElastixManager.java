@@ -215,41 +215,63 @@ public class ElastixManager {
         FromElastix
     }
 
+    private AffineTransform3D getCropTranslation(Transformer.ImageType imageType, boolean negative, String cropName, int cropLevel ) {
+        Cropper cropper = transformer.getCropper();
+        RealInterval cropInterval = cropper.getImageCropPhysicalSpace( imageType, cropName, cropLevel );
+        double[] cropMin = cropInterval.minAsDoubleArray();
+        if ( negative ) {
+            for (int i = 0; i< cropMin.length; i++) {
+                cropMin[i] = -1*cropMin[i];
+            }
+        }
+        AffineTransform3D translationCrop = new AffineTransform3D();
+        translationCrop.translate( cropMin );
+        return translationCrop;
+    }
+
     private AffineTransform3D compensateForCrop( String fixedCropName, String movingCropName, int fixedLevel,
                                                  int movingLevel, AffineTransform3D affine, CropCompensateDirection cropCompensateDirection ) {
 
-        Cropper cropper = transformer.getCropper();
+        // for toElastix: We are trying to adjust our tree transform which is from full fixed space to full moving space,
+        // to a transfrom from cropped fixed space to cropped moving space. For this, we first translate our fixed crop
+        // to be at the full size fixed space position i.e. ( + fixed crop), then we do the affines from the tree. This brings
+        // us to full moving space. We must then translate to the moving crop i.e. ( - moving crop)
+
+        // for fromElastix: With toElastix, we first compensated for teh fixed crop to bring it into the full size fixed space.
+        // Then we did the affines from the tree, then compensated for the moving crop. To apply this in the fromElastix
+        // scenario we don't need to compensate for teh fixed crop as we are already in the full size fixed space. We already
+        // include the affines from the tree, so we just need to compensate for the moving crop (in the same way as toElastix).
+        // Then do the elastix transforms. Then translate + moving Crop to get it back to the full moving space.
+
         AffineTransform3D fullTransform = new AffineTransform3D();
 
-        if ( movingCropName != null ) {
-            RealInterval cropInterval = cropper.getImageCropPhysicalSpace( Transformer.ImageType.MOVING, movingCropName, movingLevel );
-            double[] cropMin = cropInterval.minAsDoubleArray();
-            if ( cropCompensateDirection == CropCompensateDirection.ToElastix ) {
-                for (int i = 0; i< cropMin.length; i++) {
-                    cropMin[i] = -1*cropMin[i];
-                }
+        if ( cropCompensateDirection == CropCompensateDirection.ToElastix ) {
+            if ( movingCropName != null ) {
+                AffineTransform3D translationMovingCrop = getCropTranslation(Transformer.ImageType.MOVING, true, movingCropName, movingLevel);
+                fullTransform.concatenate( translationMovingCrop );
             }
-            AffineTransform3D translationMovingCrop = new AffineTransform3D();
-            translationMovingCrop.translate( cropMin );
-            fullTransform.concatenate( translationMovingCrop );
-        }
 
-        fullTransform.concatenate( affine );
+            fullTransform.concatenate( affine );
 
-        // Handle any crops. Recall fullTransform is given from fixed to moving space, so we have to translate
-        // to the new fixed image crop, then do the fullTransform from the nodes, then translate by the negative of
-        // the new moving image crop
-        if ( fixedCropName != null ) {
-            RealInterval cropInterval = cropper.getImageCropPhysicalSpace( Transformer.ImageType.FIXED, fixedCropName,fixedLevel );
-            AffineTransform3D translationFixedCrop = new AffineTransform3D();
-            double[] cropMin = cropInterval.minAsDoubleArray();
-            if ( cropCompensateDirection == CropCompensateDirection.FromElastix ) {
-                for (int i = 0; i< cropMin.length; i++) {
-                    cropMin[i] = -1*cropMin[i];
-                }
+            if ( fixedCropName != null ) {
+                AffineTransform3D translationFixedCrop = getCropTranslation( Transformer.ImageType.FIXED, false, fixedCropName,fixedLevel );
+                fullTransform.concatenate( translationFixedCrop );
             }
-            translationFixedCrop.translate( cropMin );
-            fullTransform.concatenate( translationFixedCrop );
+
+        } else {
+            AffineTransform3D translationPositiveMovingCrop = null;
+            AffineTransform3D translationNegativeMovingCrop = null;
+            if ( movingCropName != null ) {
+                translationPositiveMovingCrop = getCropTranslation(Transformer.ImageType.MOVING, false, movingCropName, movingLevel);
+                translationNegativeMovingCrop = getCropTranslation(Transformer.ImageType.MOVING, true, movingCropName, movingLevel);
+                fullTransform.concatenate( translationPositiveMovingCrop );
+            }
+
+            fullTransform.concatenate( affine );
+
+            if ( translationNegativeMovingCrop != null ) {
+                fullTransform.concatenate( translationNegativeMovingCrop );
+            }
         }
 
         return fullTransform;
