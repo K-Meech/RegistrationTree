@@ -39,15 +39,9 @@ public class BigWarpManager {
     public void openBigwarpAtSelectedNode( String transformName ) {
         this.transformName = transformName;
         AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfSelectedNode();
-        TransformedSource movingSource = transformer.createTransformedSource( Transformer.ImageType.MOVING, fullTransform);
-        Source fixedSource = transformer.getSource(Transformer.ImageType.FIXED);
+        TransformedSource fixedSource = transformer.createTransformedSource( Transformer.ImageType.FIXED, fullTransform );
+        Source movingSource = transformer.getSource( Transformer.ImageType.MOVING );
         openBigWarp( movingSource, fixedSource, transformer.getSourcePath(Transformer.ImageType.MOVING) );
-
-
-        // SpimData movingSpimData = transformer.getSpimData(Transformer.ImageType.MOVING, fullTransform);
-        // SpimData fixedSpimData = transformer.getSpimData( Transformer.ImageType.FIXED );
-        //
-        // openBigwarp( movingSpimData, fixedSpimData, transformer.getSourcePath(Transformer.ImageType.MOVING));
     }
 
     private void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {

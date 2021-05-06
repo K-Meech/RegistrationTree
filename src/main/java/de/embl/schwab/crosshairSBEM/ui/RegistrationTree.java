@@ -130,7 +130,6 @@ public class RegistrationTree {
         for (int i = 1; i< pathNodes.length; i++) {
             DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
             AffineTransform3D nodeTransform = ((CrosshairAffineTransform) currentNode.getUserObject()).getAffine();
-            // fullTransform.concatenate(nodeTransform);
             fullTransform.preConcatenate(nodeTransform);
         }
 
