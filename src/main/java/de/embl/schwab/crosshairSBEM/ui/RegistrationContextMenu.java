@@ -54,8 +54,7 @@ public class RegistrationContextMenu {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread( () -> {
-                    AffineTransform3D fullTransform = tree.getFullTransformOfSelectedNode();
-                    transformer.showSource( fullTransform );
+                    transformer.showSource( tree.getFullTransformOfSelectedNode() );
                 }).start();
             }
         };

@@ -35,24 +35,13 @@ public class RegistrationTree {
         this.transformer = transformer;
 
         // Tree view of Spimdata
-        // TODO - populate with proper initial transform
+        // This is just left at the identity transform. The transform in the xml is already present in the loaded data.
+        // All remaining transforms are put on top as the fixed transform in a Transformed Source
         DefaultMutableTreeNode top =
                 new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "XmlTransform"));
         model = new DefaultTreeModel(top);
-        // top.model = model;
-
-        DefaultMutableTreeNode category = new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "test1"));
-        DefaultMutableTreeNode subcat = new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "test1-2"));
-        DefaultMutableTreeNode category2 = new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "test2"));
-        top.add(category);
-        category.add(subcat);
-        top.add(category2);
-
-        // TODO - change icons so not different between internal and leaves - want all the intermediates to be selectable
-        // and able to be shown
 
         tree = new JTree(model);
-        // tree.setCellRenderer(new SourceAndConverterTreeCellRenderer());
 
         RegistrationContextMenu popup =  new RegistrationContextMenu(this, transformer );
 
@@ -110,12 +99,13 @@ public class RegistrationTree {
         tree.scrollPathToVisible(lastAddedNode);
     }
 
-    public AffineTransform3D getFullTransformOfSelectedNode() {
-        return getFullTransformOfTreePath( tree.getSelectionPath() );
+    public CrosshairAffineTransform getFullTransformOfSelectedNode() {
+        TreePath path = tree.getSelectionPath();
+        return new CrosshairAffineTransform( getFullTransformOfTreePath( path ), getTransformNameFromTreePath( path ));
     }
 
-    public AffineTransform3D getFullTransformOfLastAddedNode() {
-        return getFullTransformOfTreePath( lastAddedNode );
+    public CrosshairAffineTransform getFullTransformOfLastAddedNode() {
+        return new CrosshairAffineTransform( getFullTransformOfTreePath( lastAddedNode ), getTransformNameFromTreePath( lastAddedNode ) );
     }
 
     public AffineTransform3D getFullTransformOfLastSelectedNode() { return getFullTransformOfTreePath( lastSelectedNode ); }
@@ -125,7 +115,6 @@ public class RegistrationTree {
         Object[] pathNodes = path.getPath();
         AffineTransform3D fullTransform = new AffineTransform3D();
 
-        // TODO - for now we ignore the root node, and assume we're adding on top of the xml
         // skip root node
         for (int i = 1; i< pathNodes.length; i++) {
             DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
@@ -136,6 +125,13 @@ public class RegistrationTree {
         return fullTransform;
     }
 
+    public String getTransformNameFromTreePath( TreePath path ) {
+        DefaultMutableTreeNode lastNodeInPath = (DefaultMutableTreeNode) path.getLastPathComponent();
+        String name = ((CrosshairAffineTransform) lastNodeInPath.getUserObject()).getName();
+        return name;
+    }
+
+    // TODO
     public void removeRegistrationNode() {
 
     }

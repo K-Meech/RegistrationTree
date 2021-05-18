@@ -38,8 +38,8 @@ public class BigWarpManager {
 
     public void openBigwarpAtSelectedNode( String transformName ) {
         this.transformName = transformName;
-        AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfSelectedNode();
-        TransformedSource fixedSource = transformer.createTransformedSource( Transformer.ImageType.FIXED, fullTransform );
+        CrosshairAffineTransform fullTransform = transformer.getUi().getTree().getFullTransformOfSelectedNode();
+        Source fixedSource = transformer.createTransformedSource( Transformer.ImageType.FIXED, fullTransform );
         Source movingSource = transformer.getSource( Transformer.ImageType.MOVING );
         openBigWarp( movingSource, fixedSource, transformer.getSourcePath(Transformer.ImageType.MOVING) );
     }

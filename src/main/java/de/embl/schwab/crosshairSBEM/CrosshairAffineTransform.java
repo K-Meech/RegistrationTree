@@ -21,7 +21,9 @@ public class CrosshairAffineTransform {
         return affine;
     }
 
-    public void setAffine( AffineTransform3D affine ) {
+    public String getName() { return name; }
+
+    public void setAffine(AffineTransform3D affine ) {
         this.affine = affine;
     }
 

@@ -1,7 +1,6 @@
 package de.embl.schwab.crosshairSBEM;
 
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.img.RenamableSource;
 import bdv.util.BdvHandle;
 import bdv.viewer.Source;
 import bdv.tools.transformation.TransformedSource;
@@ -9,34 +8,19 @@ import bdv.util.BdvFunctions;
 import bdv.util.BdvOptions;
 import bdv.util.BdvStackSource;
 import bdv.viewer.SourceAndConverter;
-import bigwarp.BigWarp;
-// import de.embl.cba.bdv.utils.export.BdvRealSourceToVoxelImageExporter;
-import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
-import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import de.embl.schwab.crosshairSBEM.ui.Ui;
-import itc.commands.BigWarpAffineToTransformixFileCommand;
-import itc.converters.AffineTransform3DToFlatString;
-import itc.transforms.elastix.ElastixTransform;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
 import mpicbg.spim.data.registration.ViewTransform;
 import mpicbg.spim.data.registration.ViewTransformAffine;
-import net.imglib2.FinalRealInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
-import org.apache.commons.compress.utils.FileNameUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
-import static de.embl.schwab.crosshairSBEM.SwingUtils.getButton;
-
-// TODO - is soruce index consistent
 /**
  * Stores information on fixed and moving sources
  * Entry point for all transformers
@@ -80,13 +64,8 @@ public class Transformer {
 
     private ViewSpace viewSpace = ViewSpace.FIXED;
     // private ViewSpace viewSpace = ViewSpace.MOVING;
-    ArrayList<String> sourceNames = new ArrayList<>();
-    ArrayList<TransformedSource<?>> transformedSources = new ArrayList<>();
 
     BdvHandle bdv;
-    BigWarp bw;
-    int fixedSourceIndex;
-    int movingSourceIndex;
 
     public Transformer( File movingImage, File fixedImage ) {
         try {
@@ -102,10 +81,6 @@ public class Transformer {
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
-    }
-
-    public ArrayList<String> getSourceNames() {
-        return sourceNames;
     }
 
     public BigWarpManager getBigWarpManager() {
@@ -173,12 +148,8 @@ public class Transformer {
         fixedSpimData = new XmlIoSpimData().load( fixedImagePath );
         movingSpimData = new XmlIoSpimData().load( movingImagePath );
 
-        String fixedSourceName = FileNameUtils.getBaseName( fixedImagePath );
-        String movingSourceName = FileNameUtils.getBaseName( movingImagePath );
-
-        // TODO -rename the source somehow so appears nicely in bdv pullout (how is this so difficult to find?)
-
         fixedSource = BdvFunctions.show(fixedSpimData).get(0);
+        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
         bdv = fixedSource.getBdvHandle();
 
         Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
@@ -187,12 +158,16 @@ public class Transformer {
                 treeLocation.x + ui.getWidth(),
                  treeLocation.y );
 
-        fixedSource.setDisplayRange(0, 255);
-        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
-
         movingSource = BdvFunctions.show(movingSpimData, BdvOptions.options().addTo(bdv)).get(0);
-        movingSource.setDisplayRange(0, 255);
         movingTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) movingSource.getSources().get(0)).getSpimSource();
+
+        // for display purposes, wrap into renameable sources, and remove the originals
+        // TODO - generalise brightness
+        BdvFunctions.show( new RenamableSource( getSource(ImageType.FIXED), "FIXED" ), BdvOptions.options().addTo(bdv)).setDisplayRange(0, 255);
+        BdvFunctions.show( new RenamableSource( getSource(ImageType.MOVING), "MOVING"), BdvOptions.options().addTo(bdv)).setDisplayRange(0, 255);
+        fixedSource.removeFromBdv();
+        movingSource.removeFromBdv();
+
     }
 
     private double[] getFullResolutionSourceVoxelSize( SpimData spimData ) {
@@ -294,17 +269,17 @@ public class Transformer {
     }
 
     // Affine is from registration program i.e. defined as fixed to moving space
-    public TransformedSource createTransformedSource( ImageType imageType, AffineTransform3D affine ) {
+    public Source createTransformedSource( ImageType imageType, CrosshairAffineTransform affine ) {
         TransformedSource transformedSource;
         if ( imageType == ImageType.FIXED ) {
             transformedSource = new TransformedSource(getSource(ImageType.FIXED));
-            transformedSource.setFixedTransform(affine);
+            transformedSource.setFixedTransform(affine.getAffine());
         } else {
             transformedSource = new TransformedSource(getSource(ImageType.MOVING));
-            transformedSource.setFixedTransform(affine.inverse());
+            transformedSource.setFixedTransform(affine.getAffine().inverse());
         }
 
-        return transformedSource;
+        return new RenamableSource( transformedSource, affine.getName() );
     }
 
     private void addViewTransform( SpimData spimData, AffineTransform3D affine ) {
@@ -334,8 +309,8 @@ public class Transformer {
     }
 
     // Affine is from registration program i.e. defined as fixed to moving space
-    public void showSource( AffineTransform3D affine ) {
-        TransformedSource transformedSource;
+    public void showSource( CrosshairAffineTransform affine ) {
+        Source transformedSource;
         if (viewSpace == Transformer.ViewSpace.MOVING) {
             // create a source with that transform and display it
             transformedSource = createTransformedSource( ImageType.FIXED, affine );
