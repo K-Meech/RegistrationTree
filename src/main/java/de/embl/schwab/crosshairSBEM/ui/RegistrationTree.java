@@ -58,7 +58,7 @@ public class RegistrationTree {
                         tree.setSelectionRow(selRow);
                     }
 
-                    popup.showPopupMenu(e.getComponent(), e.getX(), e.getY());
+                    popup.showPopupMenu(e.getComponent(), e.getX(), e.getY(), isRoot( selPath ) );
                 }
             }
         });
@@ -101,6 +101,11 @@ public class RegistrationTree {
         tree.scrollPathToVisible(lastAddedNode);
     }
 
+    private boolean isRoot( TreePath path ) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+        return node.isRoot();
+    }
+
     public RegistrationNode getSelectedNode() {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getSelectionPath().getLastPathComponent();
         return (RegistrationNode) node.getUserObject();
@@ -134,12 +139,12 @@ public class RegistrationTree {
         return name;
     }
 
-    public void removeSource( DefaultMutableTreeNode node ) {
+    private void removeSource( DefaultMutableTreeNode node ) {
         RegistrationNode regNode = ((RegistrationNode) node.getUserObject());
         transformer.removeSource( regNode );
     }
 
-    public void removeNodeAndChildrenFromBdv( DefaultMutableTreeNode node ) {
+    private void removeNodeAndChildrenFromBdv( DefaultMutableTreeNode node ) {
         removeSource( node );
         Enumeration children = node.children();
             while( children.hasMoreElements() ) {
@@ -150,14 +155,16 @@ public class RegistrationTree {
 
     public void removeSelectedRegistrationNode() {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getSelectionPath().getLastPathComponent();
-        if ( node.getChildCount() > 0 ) {
-            if ( continueDialog() ) {
-                model.removeNodeFromParent( node );
-                removeNodeAndChildrenFromBdv( node );
+        if ( !node.isRoot() ) {
+            if (node.getChildCount() > 0) {
+                if (continueDialog()) {
+                    model.removeNodeFromParent(node);
+                    removeNodeAndChildrenFromBdv(node);
+                }
+            } else {
+                model.removeNodeFromParent(node);
+                removeNodeAndChildrenFromBdv(node);
             }
-        } else {
-            model.removeNodeFromParent( node );
-            removeNodeAndChildrenFromBdv( node );
         }
     }
 

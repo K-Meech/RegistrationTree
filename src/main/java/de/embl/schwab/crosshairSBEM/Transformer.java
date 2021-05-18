@@ -314,20 +314,22 @@ public class Transformer {
 
     // Affine is from registration program i.e. defined as fixed to moving space
     public void showSource( RegistrationNode regNode ) {
-        Source transformedSource;
-        if (viewSpace == Transformer.ViewSpace.MOVING) {
-            // create a source with that transform and display it
-            transformedSource = createTransformedSource( ImageType.FIXED, regNode );
-        } else  {
-            transformedSource = createTransformedSource( ImageType.MOVING, regNode );
-        }
+        if ( regNode.getSrc() == null ) {
+            Source transformedSource;
+            if (viewSpace == Transformer.ViewSpace.MOVING) {
+                // create a source with that transform and display it
+                transformedSource = createTransformedSource(ImageType.FIXED, regNode);
+            } else {
+                transformedSource = createTransformedSource(ImageType.MOVING, regNode);
+            }
 
-        BdvStackSource stackSource = BdvFunctions.show(transformedSource, BdvOptions.options().addTo(bdv));
-        // TODO - generalise?
-        stackSource.setDisplayRange(0, 255);
-        regNode.setSrc( stackSource );
-        currentlyDisplayedNodes.add(regNode);
-        refreshBdvWindow();
+            BdvStackSource stackSource = BdvFunctions.show(transformedSource, BdvOptions.options().addTo(bdv));
+            // TODO - generalise?
+            stackSource.setDisplayRange(0, 255);
+            regNode.setSrc(stackSource);
+            currentlyDisplayedNodes.add(regNode);
+            refreshBdvWindow();
+        }
     }
 
     public void removeSource( RegistrationNode regNode ) {

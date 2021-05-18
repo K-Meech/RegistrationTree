@@ -28,9 +28,7 @@ public class RegistrationContextMenu {
 
     public RegistrationContextMenu( RegistrationTree tree, Transformer transformer ) {
         this.transformer = transformer;
-        popup = new JPopupMenu();
         this.tree = tree;
-        populateActions();
     }
 
     public void addPopupLine() {
@@ -44,39 +42,42 @@ public class RegistrationContextMenu {
         popup.add(menuItem);
     }
 
-    private void populateActions() {
-        // show source with transform in BDV
-        ActionListener showListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new Thread( () -> {
-                    transformer.showSource( tree.getSelectedNode() );
-                }).start();
-            }
-        };
-        addPopupAction("Show in Bdv", showListener);
+    private void populateActions( boolean isRoot ) {
 
-        // remove source with transform from BDV
-        ActionListener hideListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new Thread( () -> {
-                    transformer.removeSource( tree.getSelectedNode() );
-                }).start();
-            }
-        };
-        addPopupAction("Hide from Bdv", hideListener);
+        if ( !isRoot ) {
+            // show source with transform in BDV
+            ActionListener showListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new Thread(() -> {
+                        transformer.showSource(tree.getSelectedNode());
+                    }).start();
+                }
+            };
+            addPopupAction("Show in Bdv", showListener);
 
-        // delete source with transform (and all that are lower in tree)
-        ActionListener deleteListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new Thread( () -> {
-                    tree.removeSelectedRegistrationNode();
-                }).start();
-            }
-        };
-        addPopupAction("Delete registration node", deleteListener);
+            // remove source with transform from BDV
+            ActionListener hideListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new Thread(() -> {
+                        transformer.removeSource(tree.getSelectedNode());
+                    }).start();
+                }
+            };
+            addPopupAction("Hide from Bdv", hideListener);
+
+            // delete source with transform (and all that are lower in tree)
+            ActionListener deleteListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new Thread(() -> {
+                        tree.removeSelectedRegistrationNode();
+                    }).start();
+                }
+            };
+            addPopupAction("Delete registration node", deleteListener);
+        }
 
         // print transform (for node) or for whole chain
 
@@ -149,7 +150,9 @@ public class RegistrationContextMenu {
 
     }
 
-    public void showPopupMenu(Component component, int x, int y ) {
+    public void showPopupMenu(Component component, int x, int y, boolean isRoot ) {
+        popup = new JPopupMenu();
+        populateActions( isRoot );
         popup.show(component, x, y);
     }
 
