@@ -11,6 +11,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
@@ -115,19 +116,9 @@ public class RegistrationContextMenu {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread( () -> {
-                    Gson gson = new GsonBuilder()
-                            .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
-                            .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
-                            .setPrettyPrinting()
-                            .create();
-                    Object topNode = tree.tree.getModel().getRoot();
-
-                    try(OutputStream outputStream = new FileOutputStream( "C:\\Users\\meechan\\Documents\\temp\\still_testing\\test.json" );
-                        JsonWriter writer = new JsonWriter( new OutputStreamWriter(outputStream, "UTF-8")) ) {
-                        writer.setIndent("	");
-                        gson.toJson(topNode, DefaultMutableTreeNode.class,  writer);
-                    } catch (IOException exception) {
-                        exception.printStackTrace();
+                    String jsonPath = chooseSaveLocationDialog();
+                    if ( jsonPath != null ) {
+                        saveCurrentStateToJson( jsonPath );
                     }
                 }).start();
             }
@@ -184,6 +175,38 @@ public class RegistrationContextMenu {
                     break;
             }
         }
+    }
+
+    private void saveCurrentStateToJson( String jsonPath ) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
+                .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
+                .setPrettyPrinting()
+                .create();
+        Object topNode = tree.tree.getModel().getRoot();
+
+        try(OutputStream outputStream = new FileOutputStream( jsonPath );
+            JsonWriter writer = new JsonWriter( new OutputStreamWriter(outputStream, "UTF-8")) ) {
+            writer.setIndent("	");
+            gson.toJson(topNode, DefaultMutableTreeNode.class,  writer);
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    private String chooseSaveLocationDialog() {
+        String jsonPath = null;
+        final JFileChooser jFileChooser = new JFileChooser();
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("json", "json"));
+        if (jFileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            jsonPath = jFileChooser.getSelectedFile().getAbsolutePath();
+
+            if (!jsonPath.endsWith(".json")) {
+                jsonPath += ".json";
+            }
+        }
+
+        return jsonPath;
     }
 
 }
