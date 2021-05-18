@@ -8,6 +8,7 @@ import bdv.util.BdvFunctions;
 import bdv.util.BdvOptions;
 import bdv.util.BdvStackSource;
 import bdv.viewer.SourceAndConverter;
+import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.ui.Ui;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;

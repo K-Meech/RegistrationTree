@@ -63,6 +63,14 @@ public class Cropper {
             return getVoxelInterval( name, imageType, 0);
     }
 
+    public RealInterval getImageCropRealIntervalVoxelSpace(Transformer.ImageType imageType, String name ) {
+        if ( imageType == Transformer.ImageType.FIXED ) {
+            return fixedImageCrops.get( name );
+        } else {
+            return movingImageCrops.get( name );
+        }
+    }
+
     // rounded to nearest full voxel at resolution level
     public Interval getImageCropIntervalVoxelSpace(Transformer.ImageType imageType, String name, int level ) {
         return getVoxelInterval( name, imageType, level );

@@ -6,6 +6,8 @@ import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
 import de.embl.cba.elastixwrapper.commandline.settings.TransformixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
+import de.embl.schwab.crosshairSBEM.registrationNodes.ElastixRegistrationNode;
+import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.ui.CropperUI;
 import de.embl.schwab.crosshairSBEM.ui.DownsamplingUI;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
@@ -47,6 +49,7 @@ public class ElastixManager {
     private final String AFFINE = "AffineTransform";
     private final String SPLINE = "BSplineTransform";
 
+    private ElastixParameters elastixParameters;
     private String transformName;
 
     // for debugging purposes, if flipped to true it will keep all output files i.e. all transformix file runs
@@ -89,8 +92,8 @@ public class ElastixManager {
         );
 
         parameterFilePath = new File(tmpDir, "elastixParameters.txt").getAbsolutePath();
-        defaultCreator.getElastixParameters(DefaultElastixParametersCreator.ParameterStyle.Default).writeParameterFile(
-                parameterFilePath );
+        elastixParameters = defaultCreator.getElastixParameters( DefaultElastixParametersCreator.ParameterStyle.Default );
+        elastixParameters.writeParameterFile( parameterFilePath );
     }
 
     private ElastixSettings createElastixSettings() {
@@ -156,7 +159,20 @@ public class ElastixManager {
 
                 bdvTransform = compensateForCrop( fixedCropName, movingCropName, fixedLevel, movingLevel, bdvTransform, CropCompensateDirection.FromElastix );
                 RegistrationTree tree = transformer.getUi().getTree();
-                tree.addRegistrationNodeAtLastSelection( bdvTransform, transformName );
+
+                Map<String, RealInterval> fixedCrop = new HashMap<>();
+                if ( fixedCropName != null ) {
+                    fixedCrop.put( fixedCropName, transformer.getCropper().getImageCropRealIntervalVoxelSpace(Transformer.ImageType.FIXED, fixedCropName) );
+                }
+
+                Map<String, RealInterval> movingCrop = new HashMap<>();
+                if ( movingCropName != null ) {
+                    movingCrop.put( movingCropName, transformer.getCropper().getImageCropRealIntervalVoxelSpace(Transformer.ImageType.MOVING, movingCropName) );
+                }
+
+                RegistrationNode registrationNode = new ElastixRegistrationNode(fixedCrop, movingCrop, fixedLevel, movingLevel,
+                        elastixParameters, elastixTransform, bdvTransform, transformName );
+                tree.addRegistrationNodeAtLastSelection( registrationNode );
                 transformer.showSource( tree.getLastAddedNode() );
             } else {
                 //TODO - error?

@@ -1,4 +1,4 @@
-package de.embl.schwab.crosshairSBEM;
+package de.embl.schwab.crosshairSBEM.registrationNodes;
 
 import bdv.util.BdvStackSource;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -27,6 +27,11 @@ public class RegistrationNode {
         this.name = name;
     }
 
+    public RegistrationNode( AffineTransform3D affine, String name ) {
+        this.affine = affine;
+        this.name = name;
+    }
+
     public AffineTransform3D getAffine() {
         return affine;
     }
@@ -35,7 +40,6 @@ public class RegistrationNode {
     }
 
     public AffineTransform3D getFullTransform() { return fullTransform; }
-
     public void setFullTransform(AffineTransform3D fullTransform) { this.fullTransform = fullTransform; }
 
     public String getName() { return name; }

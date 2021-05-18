@@ -1,6 +1,6 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
-import de.embl.schwab.crosshairSBEM.RegistrationNode;
+import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.Transformer;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -76,16 +76,16 @@ public class RegistrationTree {
     }
 
 
-    public void addRegistrationNodeAtLastSelection( AffineTransform3D affine, String transformName ) {
-        addRegistrationNode( affine, transformName, lastSelectedNode );
+    public void addRegistrationNodeAtLastSelection( RegistrationNode regNode ) {
+        addRegistrationNode( regNode, lastSelectedNode );
     }
 
-    public void addRegistrationNode( AffineTransform3D affine, String transformName, TreePath parentPath ) {
+    public void addRegistrationNode( RegistrationNode regNode, TreePath parentPath ) {
 
-        AffineTransform3D fullTransform = getFullTransform( parentPath, affine );
-        RegistrationNode registrationNode = new RegistrationNode( affine, fullTransform, transformName );
+        AffineTransform3D fullTransform = getFullTransform( parentPath, regNode.getAffine() );
+        regNode.setFullTransform( fullTransform );
 
-        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode( registrationNode );
+        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode( regNode );
 
         DefaultMutableTreeNode parentNode= null;
         if (parentPath != null) {
@@ -122,8 +122,10 @@ public class RegistrationTree {
     }
 
     public AffineTransform3D getFullTransform( TreePath path ) {
+        AffineTransform3D fullTransform = new AffineTransform3D();
         DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) path.getLastPathComponent();
-        return ((RegistrationNode) currentNode.getUserObject()).getFullTransform();
+        fullTransform.set( ((RegistrationNode) currentNode.getUserObject()).getFullTransform() );
+        return fullTransform;
     }
 
     public AffineTransform3D getFullTransform( TreePath parentPath, AffineTransform3D childTransform ) {

@@ -4,6 +4,8 @@ import bdv.ij.util.ProgressWriterIJ;
 import bdv.viewer.Source;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
+import de.embl.schwab.crosshairSBEM.registrationNodes.BigWarpRegistrationNode;
+import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.ui.BigWarpUI;
 import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import mpicbg.spim.data.SpimData;
@@ -76,9 +78,10 @@ public class BigWarpManager {
         // TODO - deal with if fixed/moving same way around, or needs to be swapped
         // TODO - check if type of transform is supported i.e. no thin plate splines!
         // TODO - concatenate the chain of transforms
-        AffineTransform3D bigWarpTransform = bw.affine3d();
+        BigWarpRegistrationNode bigWarpRegistrationNode = new BigWarpRegistrationNode( bw, transformName );
         RegistrationTree tree = transformer.getUi().getTree();
-        tree.addRegistrationNodeAtLastSelection( bigWarpTransform, transformName );
+
+        tree.addRegistrationNodeAtLastSelection( bigWarpRegistrationNode );
         transformer.showSource( tree.getLastAddedNode() );
     }
 

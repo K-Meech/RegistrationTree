@@ -1,6 +1,7 @@
 package de.embl.schwab.crosshairSBEM;
 
 import com.google.gson.*;
+import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.lang.reflect.Type;
