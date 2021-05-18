@@ -1,18 +1,17 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
-import de.embl.schwab.crosshairSBEM.CrosshairAffineTransform;
+import de.embl.schwab.crosshairSBEM.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.Transformer;
-import ij.IJ;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Enumeration;
 
 public class RegistrationTree {
     // based on bdv playground's tree
@@ -38,7 +37,7 @@ public class RegistrationTree {
         // This is just left at the identity transform. The transform in the xml is already present in the loaded data.
         // All remaining transforms are put on top as the fixed transform in a Transformed Source
         DefaultMutableTreeNode top =
-                new DefaultMutableTreeNode(new CrosshairAffineTransform(new AffineTransform3D(), "XmlTransform"));
+                new DefaultMutableTreeNode(new RegistrationNode(new AffineTransform3D(), new AffineTransform3D(), "XmlTransform"));
         model = new DefaultTreeModel(top);
 
         tree = new JTree(model);
@@ -63,7 +62,6 @@ public class RegistrationTree {
                 }
             }
         });
-
     }
 
     public JPanel createTreePanel() {
@@ -78,12 +76,16 @@ public class RegistrationTree {
     }
 
 
-    public void addRegistrationNodeAtLastSelection( CrosshairAffineTransform affine ) {
-        addRegistrationNode( affine, lastSelectedNode );
+    public void addRegistrationNodeAtLastSelection( AffineTransform3D affine, String transformName ) {
+        addRegistrationNode( affine, transformName, lastSelectedNode );
     }
 
-    public void addRegistrationNode( CrosshairAffineTransform affine, TreePath parentPath ) {
-        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode( affine );
+    public void addRegistrationNode( AffineTransform3D affine, String transformName, TreePath parentPath ) {
+
+        AffineTransform3D fullTransform = getFullTransform( parentPath, affine );
+        RegistrationNode registrationNode = new RegistrationNode( affine, fullTransform, transformName );
+
+        DefaultMutableTreeNode childNode = new DefaultMutableTreeNode( registrationNode );
 
         DefaultMutableTreeNode parentNode= null;
         if (parentPath != null) {
@@ -99,40 +101,75 @@ public class RegistrationTree {
         tree.scrollPathToVisible(lastAddedNode);
     }
 
-    public CrosshairAffineTransform getFullTransformOfSelectedNode() {
-        TreePath path = tree.getSelectionPath();
-        return new CrosshairAffineTransform( getFullTransformOfTreePath( path ), getTransformNameFromTreePath( path ));
+    public RegistrationNode getSelectedNode() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getSelectionPath().getLastPathComponent();
+        return (RegistrationNode) node.getUserObject();
     }
 
-    public CrosshairAffineTransform getFullTransformOfLastAddedNode() {
-        return new CrosshairAffineTransform( getFullTransformOfTreePath( lastAddedNode ), getTransformNameFromTreePath( lastAddedNode ) );
+    public RegistrationNode getLastAddedNode() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) lastAddedNode.getLastPathComponent();
+        return (RegistrationNode) node.getUserObject();
     }
 
-    public AffineTransform3D getFullTransformOfLastSelectedNode() { return getFullTransformOfTreePath( lastSelectedNode ); }
+    public RegistrationNode getLastSelectedNode() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) lastSelectedNode.getLastPathComponent();
+        return (RegistrationNode) node.getUserObject();
+    }
 
-    public AffineTransform3D getFullTransformOfTreePath( TreePath path ) {
-        // concatenate transforms up tree dependent on fixed or moving view
-        Object[] pathNodes = path.getPath();
-        AffineTransform3D fullTransform = new AffineTransform3D();
+    public AffineTransform3D getFullTransform( TreePath path ) {
+        DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) path.getLastPathComponent();
+        return ((RegistrationNode) currentNode.getUserObject()).getFullTransform();
+    }
 
-        // skip root node
-        for (int i = 1; i< pathNodes.length; i++) {
-            DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) pathNodes[i];
-            AffineTransform3D nodeTransform = ((CrosshairAffineTransform) currentNode.getUserObject()).getAffine();
-            fullTransform.preConcatenate(nodeTransform);
-        }
+    public AffineTransform3D getFullTransform( TreePath parentPath, AffineTransform3D childTransform ) {
+        AffineTransform3D fullTransform = getFullTransform( parentPath );
+        fullTransform.preConcatenate( childTransform );
 
         return fullTransform;
     }
 
     public String getTransformNameFromTreePath( TreePath path ) {
         DefaultMutableTreeNode lastNodeInPath = (DefaultMutableTreeNode) path.getLastPathComponent();
-        String name = ((CrosshairAffineTransform) lastNodeInPath.getUserObject()).getName();
+        String name = ((RegistrationNode) lastNodeInPath.getUserObject()).getName();
         return name;
     }
 
-    // TODO
-    public void removeRegistrationNode() {
+    public void removeSource( DefaultMutableTreeNode node ) {
+        RegistrationNode regNode = ((RegistrationNode) node.getUserObject());
+        transformer.removeSource( regNode );
+    }
 
+    public void removeNodeAndChildrenFromBdv( DefaultMutableTreeNode node ) {
+        removeSource( node );
+        Enumeration children = node.children();
+            while( children.hasMoreElements() ) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) children.nextElement();
+                removeNodeAndChildrenFromBdv( child );
+            }
+    }
+
+    public void removeSelectedRegistrationNode() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getSelectionPath().getLastPathComponent();
+        if ( node.getChildCount() > 0 ) {
+            if ( continueDialog() ) {
+                model.removeNodeFromParent( node );
+                removeNodeAndChildrenFromBdv( node );
+            }
+        } else {
+            model.removeNodeFromParent( node );
+            removeNodeAndChildrenFromBdv( node );
+        }
+    }
+
+    private boolean continueDialog() {
+        int result = JOptionPane.showConfirmDialog(null,
+                "All children of this node will also be deleted. Continue?", "Delete node and all children?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+        if (result == JOptionPane.YES_OPTION) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -1,12 +1,9 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
-import bdv.tools.transformation.TransformedSource;
-import bdv.util.BdvFunctions;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import de.embl.schwab.crosshairSBEM.CrosshairAffineTransform;
 import de.embl.schwab.crosshairSBEM.DefaultMutableTreeNodeAdapter;
 import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.gui.GenericDialog;
@@ -16,7 +13,6 @@ import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -54,15 +50,33 @@ public class RegistrationContextMenu {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread( () -> {
-                    transformer.showSource( tree.getFullTransformOfSelectedNode() );
+                    transformer.showSource( tree.getSelectedNode() );
                 }).start();
             }
         };
         addPopupAction("Show in Bdv", showListener);
 
         // remove source with transform from BDV
+        ActionListener hideListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Thread( () -> {
+                    transformer.removeSource( tree.getSelectedNode() );
+                }).start();
+            }
+        };
+        addPopupAction("Hide from Bdv", hideListener);
 
         // delete source with transform (and all that are lower in tree)
+        ActionListener deleteListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Thread( () -> {
+                    tree.removeSelectedRegistrationNode();
+                }).start();
+            }
+        };
+        addPopupAction("Delete registration node", deleteListener);
 
         // print transform (for node) or for whole chain
 
@@ -131,7 +145,7 @@ public class RegistrationContextMenu {
                 }).start();
             }
         };
-        addPopupAction("Add new transform", addListener);
+        addPopupAction("Add new transform node", addListener);
 
     }
 

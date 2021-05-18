@@ -26,7 +26,7 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
                     node.setAllowsChildren( jobject.get("allowsChildren").getAsBoolean() );
                     break;
                 case "userObject":
-                    node.setUserObject(jsonDeserializationContext.deserialize( jobject.get("userObject").getAsJsonObject(), CrosshairAffineTransform.class));
+                    node.setUserObject(jsonDeserializationContext.deserialize( jobject.get("userObject").getAsJsonObject(), RegistrationNode.class));
                     break;
                 case "children":
                     Iterator<JsonElement> children = jobject.get("children").getAsJsonArray().iterator();

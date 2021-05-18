@@ -156,8 +156,8 @@ public class ElastixManager {
 
                 bdvTransform = compensateForCrop( fixedCropName, movingCropName, fixedLevel, movingLevel, bdvTransform, CropCompensateDirection.FromElastix );
                 RegistrationTree tree = transformer.getUi().getTree();
-                tree.addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bdvTransform, transformName));
-                transformer.showSource( tree.getFullTransformOfLastAddedNode() );
+                tree.addRegistrationNodeAtLastSelection( bdvTransform, transformName );
+                transformer.showSource( tree.getLastAddedNode() );
             } else {
                 //TODO - error?
                 IJ.log( "Transform type unsupported in Crosshair!");
@@ -279,7 +279,7 @@ public class ElastixManager {
 
     public void writeInitialTransformixFile( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
 
-        AffineTransform3D fullTransform = transformer.getUi().getTree().getFullTransformOfLastSelectedNode();
+        AffineTransform3D fullTransform = transformer.getUi().getTree().getLastSelectedNode().getFullTransform();
         fullTransform = compensateForCrop( fixedCropName, movingCropName, fixedLevel, movingLevel, fullTransform, CropCompensateDirection.ToElastix );
 
         ImagePlus fixedImage = transformer.getExporter().getLastFixedImageWritten();

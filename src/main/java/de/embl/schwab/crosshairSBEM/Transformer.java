@@ -20,6 +20,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Stores information on fixed and moving sources
@@ -67,6 +68,8 @@ public class Transformer {
 
     BdvHandle bdv;
 
+    private ArrayList<RegistrationNode> currentlyDisplayedNodes;
+
     public Transformer( File movingImage, File fixedImage ) {
         try {
             ui = new Ui( this );
@@ -78,6 +81,7 @@ public class Transformer {
             cropper = new Cropper( this );
             downsampler = new Downsampler( this );
             exporter = new Exporter( this, cropper );
+            currentlyDisplayedNodes = new ArrayList<>();
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
@@ -269,17 +273,17 @@ public class Transformer {
     }
 
     // Affine is from registration program i.e. defined as fixed to moving space
-    public Source createTransformedSource( ImageType imageType, CrosshairAffineTransform affine ) {
+    public Source createTransformedSource( ImageType imageType, RegistrationNode regNode ) {
         TransformedSource transformedSource;
         if ( imageType == ImageType.FIXED ) {
             transformedSource = new TransformedSource(getSource(ImageType.FIXED));
-            transformedSource.setFixedTransform(affine.getAffine());
+            transformedSource.setFixedTransform(regNode.getFullTransform());
         } else {
             transformedSource = new TransformedSource(getSource(ImageType.MOVING));
-            transformedSource.setFixedTransform(affine.getAffine().inverse());
+            transformedSource.setFixedTransform(regNode.getFullTransform().inverse());
         }
 
-        return new RenamableSource( transformedSource, affine.getName() );
+        return new RenamableSource( transformedSource, regNode.getName() );
     }
 
     private void addViewTransform( SpimData spimData, AffineTransform3D affine ) {
@@ -309,19 +313,30 @@ public class Transformer {
     }
 
     // Affine is from registration program i.e. defined as fixed to moving space
-    public void showSource( CrosshairAffineTransform affine ) {
+    public void showSource( RegistrationNode regNode ) {
         Source transformedSource;
         if (viewSpace == Transformer.ViewSpace.MOVING) {
             // create a source with that transform and display it
-            transformedSource = createTransformedSource( ImageType.FIXED, affine );
+            transformedSource = createTransformedSource( ImageType.FIXED, regNode );
         } else  {
-            transformedSource = createTransformedSource( ImageType.MOVING, affine );
+            transformedSource = createTransformedSource( ImageType.MOVING, regNode );
         }
 
         BdvStackSource stackSource = BdvFunctions.show(transformedSource, BdvOptions.options().addTo(bdv));
         // TODO - generalise?
         stackSource.setDisplayRange(0, 255);
+        regNode.setSrc( stackSource );
+        currentlyDisplayedNodes.add(regNode);
         refreshBdvWindow();
+    }
+
+    public void removeSource( RegistrationNode regNode ) {
+        BdvStackSource src = regNode.getSrc();
+        if ( src != null ) {
+            regNode.getSrc().removeFromBdv();
+            regNode.setSrc(null);
+            currentlyDisplayedNodes.remove(regNode);
+        }
     }
 
     public long[] getSourceVoxelDimensions( ImageType imageType, int level ) {

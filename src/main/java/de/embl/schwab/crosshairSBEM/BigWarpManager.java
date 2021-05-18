@@ -1,7 +1,6 @@
 package de.embl.schwab.crosshairSBEM;
 
 import bdv.ij.util.ProgressWriterIJ;
-import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Source;
 import bigwarp.BigWarp;
 import bigwarp.BigWarpInit;
@@ -14,7 +13,6 @@ import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
 import java.awt.*;
 import java.io.File;
-import java.util.ArrayList;
 
 public class BigWarpManager {
 
@@ -38,8 +36,8 @@ public class BigWarpManager {
 
     public void openBigwarpAtSelectedNode( String transformName ) {
         this.transformName = transformName;
-        CrosshairAffineTransform fullTransform = transformer.getUi().getTree().getFullTransformOfSelectedNode();
-        Source fixedSource = transformer.createTransformedSource( Transformer.ImageType.FIXED, fullTransform );
+        RegistrationNode regNode = transformer.getUi().getTree().getSelectedNode();
+        Source fixedSource = transformer.createTransformedSource( Transformer.ImageType.FIXED, regNode );
         Source movingSource = transformer.getSource( Transformer.ImageType.MOVING );
         openBigWarp( movingSource, fixedSource, transformer.getSourcePath(Transformer.ImageType.MOVING) );
     }
@@ -80,8 +78,8 @@ public class BigWarpManager {
         // TODO - concatenate the chain of transforms
         AffineTransform3D bigWarpTransform = bw.affine3d();
         RegistrationTree tree = transformer.getUi().getTree();
-        tree.addRegistrationNodeAtLastSelection( new CrosshairAffineTransform(bigWarpTransform, transformName));
-        transformer.showSource( tree.getFullTransformOfLastAddedNode() );
+        tree.addRegistrationNodeAtLastSelection( bigWarpTransform, transformName );
+        transformer.showSource( tree.getLastAddedNode() );
     }
 
     public Point getViewerFrameQLocation() {
