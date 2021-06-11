@@ -89,22 +89,9 @@ public class RegistrationContextMenu {
             @Override
             public void actionPerformed(ActionEvent e) {
                 new Thread( () -> {
-                    Gson gson = new GsonBuilder()
-                            .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
-                            .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
-                            .setPrettyPrinting()
-                            .create();
-
-                    try(InputStream inputStream = new FileInputStream( "C:\\Users\\meechan\\Documents\\temp\\still_testing\\test.json" );
-                        JsonReader reader = new JsonReader( new InputStreamReader(inputStream, "UTF-8")) ) {
-                        DefaultMutableTreeNode newTopNode = gson.fromJson(reader, DefaultMutableTreeNode.class);
-
-                        DefaultTreeModel treeModel = (DefaultTreeModel) tree.tree.getModel();
-                        treeModel.setRoot( newTopNode );
-                        treeModel.reload();
-
-                    } catch (IOException exception) {
-                        exception.printStackTrace();
+                    String jsonPath = chooseJson();
+                    if ( jsonPath != null ) {
+                        loadCurrentStateFromJson( jsonPath );
                     }
                 }).start();
             }
@@ -177,6 +164,25 @@ public class RegistrationContextMenu {
         }
     }
 
+    private void loadCurrentStateFromJson( String jsonPath ) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
+                .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
+                .setPrettyPrinting()
+                .create();
+
+        try(InputStream inputStream = new FileInputStream( jsonPath );
+            JsonReader reader = new JsonReader( new InputStreamReader(inputStream, "UTF-8")) ) {
+            DefaultMutableTreeNode newTopNode = gson.fromJson(reader, DefaultMutableTreeNode.class);
+
+            DefaultTreeModel treeModel = (DefaultTreeModel) tree.tree.getModel();
+            treeModel.setRoot( newTopNode );
+            treeModel.reload();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
+
     private void saveCurrentStateToJson( String jsonPath ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
@@ -197,12 +203,29 @@ public class RegistrationContextMenu {
     private String chooseSaveLocationDialog() {
         String jsonPath = null;
         final JFileChooser jFileChooser = new JFileChooser();
+        jFileChooser.setDialogTitle("Choose json location:");
         jFileChooser.setFileFilter(new FileNameExtensionFilter("json", "json"));
         if (jFileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
             jsonPath = jFileChooser.getSelectedFile().getAbsolutePath();
 
             if (!jsonPath.endsWith(".json")) {
                 jsonPath += ".json";
+            }
+        }
+
+        return jsonPath;
+    }
+
+    private String chooseJson() {
+        String jsonPath = null;
+        final JFileChooser jFileChooser = new JFileChooser();
+        jFileChooser.setDialogTitle("Choose json:");
+        jFileChooser.setFileFilter(new FileNameExtensionFilter("json", "json"));
+        if (jFileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            jsonPath = jFileChooser.getSelectedFile().getAbsolutePath();
+
+            if (!jsonPath.endsWith(".json")) {
+                return null;
             }
         }
 

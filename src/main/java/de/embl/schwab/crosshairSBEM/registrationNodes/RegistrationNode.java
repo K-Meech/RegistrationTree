@@ -13,9 +13,6 @@ public class RegistrationNode {
     // full transform, concatenating this affine to all previous transforms before it
     private AffineTransform3D fullTransform;
 
-
-    // TODO - crop used for each image
-    // TODO - downsampling level used for each image
     // TODO record fixed and moving image
 
     // holds Bdvstacksource, if node is displayed
