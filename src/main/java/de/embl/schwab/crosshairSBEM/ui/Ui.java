@@ -16,6 +16,10 @@ public class Ui {
     private RegistrationTree tree;
     private Transformer transformer;
 
+    private JButton viewFixedButton;
+    private JButton viewMovingButton;
+
+
     public Ui( Transformer transformer ) {
         // TODO make loading and saving tree buttons in panel rather than in menu, right clickmenu should be things
         // that are node specific
@@ -65,24 +69,30 @@ public class Ui {
                 if (e.getActionCommand().equals("fixed")) {
                     if ( transformer.getViewSpace() != Transformer.ViewSpace.FIXED ) {
                         transformer.toggleViewSpace();
+                        viewFixedButton.setEnabled( false );
+                        viewMovingButton.setEnabled( true );
                     }
                 } else if (e.getActionCommand().equals("moving")) {
                     if ( transformer.getViewSpace() != Transformer.ViewSpace.MOVING ) {
                         transformer.toggleViewSpace();
+                        viewMovingButton.setEnabled( false );
+                        viewFixedButton.setEnabled( true );
                     }
                 }
             }
         };
 
-        JButton viewFixed = new JButton("View Fixed Space");
-        viewFixed.setActionCommand("fixed");
-        viewFixed.addActionListener(viewListener);
-        viewPanel.add(viewFixed);
+        viewFixedButton = new JButton("View Fixed Space");
+        viewFixedButton.setActionCommand("fixed");
+        viewFixedButton.addActionListener(viewListener);
+        viewPanel.add(viewFixedButton);
+        viewFixedButton.setEnabled( false );
 
-        JButton viewMoving = new JButton("View Moving Space");
-        viewMoving.setActionCommand("moving");
-        viewMoving.addActionListener(viewListener);
-        viewPanel.add(viewMoving);
+        viewMovingButton = new JButton("View Moving Space");
+        viewMovingButton.setActionCommand("moving");
+        viewMovingButton.addActionListener(viewListener);
+        viewPanel.add(viewMovingButton);
+        viewMovingButton.setEnabled( true );
 
         return viewPanel;
 
