@@ -1,6 +1,8 @@
 package de.embl.schwab.crosshairSBEM;
 
 import com.google.gson.*;
+import de.embl.schwab.crosshairSBEM.registrationNodes.BigWarpRegistrationNode;
+import de.embl.schwab.crosshairSBEM.registrationNodes.ElastixRegistrationNode;
 import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -27,7 +29,17 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
                     node.setAllowsChildren( jobject.get("allowsChildren").getAsBoolean() );
                     break;
                 case "userObject":
-                    node.setUserObject(jsonDeserializationContext.deserialize( jobject.get("userObject").getAsJsonObject(), RegistrationNode.class));
+                    JsonObject userObject = jobject.get("userObject").getAsJsonObject();
+                    if ( userObject.has("elastixParameters")) {
+                        node.setUserObject(jsonDeserializationContext.deserialize(
+                                userObject, ElastixRegistrationNode.class));
+                    } else if ( userObject.has("movingLandmarks") ) {
+                        node.setUserObject(jsonDeserializationContext.deserialize(
+                                userObject, BigWarpRegistrationNode.class));
+                    } else {
+                        node.setUserObject(jsonDeserializationContext.deserialize(
+                                userObject, RegistrationNode.class));
+                    }
                     break;
                 case "children":
                     Iterator<JsonElement> children = jobject.get("children").getAsJsonArray().iterator();
