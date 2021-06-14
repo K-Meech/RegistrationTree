@@ -11,9 +11,9 @@ import java.io.File;
 public class RegistererCommand implements Command {
 
     @Parameter
-    File movingImage;
+    public File movingImage;
     @Parameter
-    File fixedImage;
+    public File fixedImage;
 
     @Override
     public void run() {

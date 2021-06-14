@@ -356,7 +356,9 @@ public class Transformer {
             viewSpace = ViewSpace.FIXED;
         }
 
-        for ( RegistrationNode regNode: currentlyDisplayedNodes ) {
+        // make new arraylist, otherwise we are modifying the list as we iterate through it
+        ArrayList<RegistrationNode> currentNodes = new ArrayList<>( currentlyDisplayedNodes );
+        for ( RegistrationNode regNode: currentNodes ) {
             removeSource( regNode );
             showSource( regNode );
         }

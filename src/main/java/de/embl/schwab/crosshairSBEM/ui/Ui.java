@@ -62,7 +62,6 @@ public class Ui {
         ActionListener viewListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // TODO - fill
                 if (e.getActionCommand().equals("fixed")) {
                     if ( transformer.getViewSpace() != Transformer.ViewSpace.FIXED ) {
                         transformer.toggleViewSpace();
