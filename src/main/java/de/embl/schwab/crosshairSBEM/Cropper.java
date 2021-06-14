@@ -99,23 +99,21 @@ public class Cropper {
     }
 
 
-    // TODO - make crop dialog deal with transforms, so always crops in real pixel orientation for writing out
+
     // TODO - y dim seems integer??
     public void crop(Transformer.ImageType imageType, String cropName) {
         // https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java
         //https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L58
 
+        transformer.onlyShowOriginalImage( imageType );
         TransformedRealBoxSelectionDialog.Result result = createTransformedRealBoxSelectionDialog( imageType );
 
         if ( result != null ) {
             if ( imageType == Transformer.ImageType.FIXED ) {
-                // TODO - give teh crop a name
                 fixedImageCrops.put(cropName, result.getInterval() );
             } else {
                 movingImageCrops.put(cropName, result.getInterval());
             }
-            // int level = chooseSourceLevel( imageType );
-            // cropper.writeCrop(result, imageType, level, tempdir );
         }
     }
 

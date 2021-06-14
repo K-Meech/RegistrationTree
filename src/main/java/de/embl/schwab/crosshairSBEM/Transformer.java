@@ -55,8 +55,10 @@ public class Transformer {
 
     private SpimData fixedSpimData;
     private BdvStackSource fixedSource;
+    private BdvStackSource renamedFixedSource;
     private SpimData movingSpimData;
     private BdvStackSource movingSource;
+    private BdvStackSource renamedMovingSource;
 
     private TransformedSource<?> fixedTransformedSource;
     private TransformedSource<?> movingTransformedSource;
@@ -175,8 +177,10 @@ public class Transformer {
 
         // for display purposes, wrap into renameable sources, and remove the originals
         // TODO - generalise brightness
-        BdvFunctions.show( new RenamableSource( getSource(ImageType.FIXED), "FIXED" ), BdvOptions.options().addTo(bdv)).setDisplayRange(0, 255);
-        BdvFunctions.show( new RenamableSource( getSource(ImageType.MOVING), "MOVING"), BdvOptions.options().addTo(bdv)).setDisplayRange(0, 255);
+        renamedFixedSource = BdvFunctions.show( new RenamableSource( getSource(ImageType.FIXED), "FIXED" ), BdvOptions.options().addTo(bdv));
+        renamedFixedSource.setDisplayRange(0, 255);
+        renamedMovingSource = BdvFunctions.show( new RenamableSource( getSource(ImageType.MOVING), "MOVING"), BdvOptions.options().addTo(bdv));
+        renamedMovingSource.setDisplayRange(0, 255);
         fixedSource.removeFromBdv();
         movingSource.removeFromBdv();
 
@@ -337,6 +341,20 @@ public class Transformer {
             regNode.setSrc(stackSource);
             currentlyDisplayedNodes.add(regNode);
             refreshBdvWindow();
+        }
+    }
+
+    public void onlyShowOriginalImage( ImageType imageType ) {
+        for ( RegistrationNode node: currentlyDisplayedNodes ) {
+            node.getSrc().setActive( false );
+        }
+
+        if ( imageType == ImageType.FIXED ) {
+            renamedFixedSource.setActive( true );
+            renamedMovingSource.setActive( false );
+        } else {
+            renamedMovingSource.setActive( true );
+            renamedFixedSource.setActive( false );
         }
     }
 
