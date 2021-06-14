@@ -342,6 +342,19 @@ public class Transformer {
         }
     }
 
+    public void toggleViewSpace() {
+        if ( viewSpace == ViewSpace.FIXED ) {
+            viewSpace = ViewSpace.MOVING;
+        } else {
+            viewSpace = ViewSpace.FIXED;
+        }
+
+        for ( RegistrationNode regNode: currentlyDisplayedNodes ) {
+            removeSource( regNode );
+            showSource( regNode );
+        }
+    }
+
     public long[] getSourceVoxelDimensions( ImageType imageType, int level ) {
         if ( imageType == ImageType.FIXED ) {
             return getSourceVoxelDimensions( fixedSource, level );
