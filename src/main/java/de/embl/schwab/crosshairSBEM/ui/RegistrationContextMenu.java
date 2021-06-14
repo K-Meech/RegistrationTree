@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import de.embl.cba.tables.FileAndUrlUtils;
 import de.embl.schwab.crosshairSBEM.DefaultMutableTreeNodeAdapter;
 import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.gui.GenericDialog;
+import mpicbg.spim.data.SpimDataException;
 import net.imglib2.realtransform.AffineTransform3D;
 import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 
@@ -78,6 +80,17 @@ public class RegistrationContextMenu {
                 }
             };
             addPopupAction("Delete registration node", deleteListener);
+
+            // export in a certain space
+            ActionListener exportListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new Thread( () -> {
+                        exportDialog();
+                    }).start();
+                }
+            };
+            addPopupAction("Export to bdv xml", exportListener);
         }
 
         // print transform (for node) or for whole chain
@@ -160,6 +173,33 @@ public class RegistrationContextMenu {
                     break;
                 case AffineString:
                     break;
+            }
+        }
+    }
+
+    public void exportDialog () {
+        final GenericDialog gd = new GenericDialog( "Export transform to bdv xml..." );
+        gd.addMessage("FIXED space, will export a bdv xml for the moving image that matches it to the fixed image. \n" +
+                "MOVING space, will export a bdv xml for the fixed image that matches it to the moving image.");
+        String[] viewSpaces = new String[] {Transformer.ViewSpace.FIXED.toString(),
+                Transformer.ViewSpace.MOVING.toString() };
+        gd.addChoice( "Export in space:", viewSpaces, viewSpaces[0]);
+        gd.addFileField("Bdv xml location",
+                FileAndUrlUtils.combinePath( System.getProperty("user.home"), "export.xml") );
+        gd.showDialog();
+
+        if ( !gd.wasCanceled() ) {
+            Transformer.ViewSpace viewSpace = Transformer.ViewSpace.valueOf( gd.getNextChoice() );
+            String xmlPath = gd.getNextString();
+
+            if (!xmlPath.endsWith(".xml")) {
+                xmlPath += ".xml";
+            }
+
+            try {
+                transformer.writeBdvXml(viewSpace, tree.getSelectedNode(), xmlPath);
+            } catch (SpimDataException e) {
+                e.printStackTrace();
             }
         }
     }

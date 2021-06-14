@@ -1,6 +1,8 @@
 package de.embl.schwab.crosshairSBEM;
 
 import bdv.img.RenamableSource;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.util.BdvHandle;
 import bdv.viewer.Source;
 import bdv.tools.transformation.TransformedSource;
@@ -13,8 +15,11 @@ import de.embl.schwab.crosshairSBEM.ui.Ui;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.XmlIoSpimData;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
 import mpicbg.spim.data.registration.ViewTransform;
 import mpicbg.spim.data.registration.ViewTransformAffine;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -22,6 +27,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Stores information on fixed and moving sources
@@ -353,6 +360,41 @@ public class Transformer {
             removeSource( regNode );
             showSource( regNode );
         }
+    }
+
+    // TODO - add option to add each item in chain as separate view transform? Would make it more readable so people
+    // could just look at the xml and see all the individual big warp / elastix etc transforms
+    public void writeBdvXml(ViewSpace viewSpace, RegistrationNode regNode, String newXmlPath ) throws SpimDataException {
+        SpimDataMinimal spimDataMinimal;
+        if ( viewSpace == ViewSpace.FIXED ) {
+            spimDataMinimal = new XmlIoSpimDataMinimal().load(movingImage.getAbsolutePath());
+        } else {
+            spimDataMinimal = new XmlIoSpimDataMinimal().load(fixedImage.getAbsolutePath());
+        }
+        // add on top of any existing transforms in the xml file
+        Map<ViewId, ViewRegistration> registrations = spimDataMinimal.getViewRegistrations().getViewRegistrations();
+
+        int numTimepoints = spimDataMinimal.getSequenceDescription().getTimePoints().size();
+        int numSetups = spimDataMinimal.getSequenceDescription().getViewSetupsOrdered().size();
+
+        AffineTransform3D regTransform = new AffineTransform3D();
+        if ( viewSpace == ViewSpace.FIXED ) {
+            regTransform.set(regNode.getFullTransform().inverse());
+        } else {
+            regTransform.set(regNode.getFullTransform());
+        }
+
+        for ( int t = 0; t < numTimepoints; ++t ) {
+            for (int s = 0; s < numSetups; ++s) {
+                ViewTransform viewTransform = new ViewTransformAffine( regNode.getName(), regTransform );
+                registrations.get( new ViewId(t, s) ).preconcatenateTransform( viewTransform );
+            }
+        }
+
+        SpimDataMinimal updatedSpimDataMinimial = new SpimDataMinimal(spimDataMinimal.getBasePath(),
+                spimDataMinimal.getSequenceDescription(), new ViewRegistrations( registrations) );
+
+        new XmlIoSpimDataMinimal().save( updatedSpimDataMinimial, newXmlPath );
     }
 
     public long[] getSourceVoxelDimensions( ImageType imageType, int level ) {
