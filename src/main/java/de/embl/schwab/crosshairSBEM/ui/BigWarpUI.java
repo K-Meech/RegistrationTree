@@ -16,9 +16,6 @@ public class BigWarpUI {
 
     public BigWarpUI( BigWarpManager bigWarpManager ) {
 
-        // TODO - keep all the bigwarp metadata i.e. what kind of bigwarp it was (euler etc) and the points
-        // can save in temp folder with folder structure == tree i.e. one folder for top node, then folders inside for children etc
-
         this.bigWarpManager = bigWarpManager;
 
         JFrame menu = new JFrame();

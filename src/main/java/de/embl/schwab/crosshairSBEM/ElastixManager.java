@@ -31,8 +31,8 @@ import java.util.Map;
 import static itc.utilities.Units.MILLIMETER;
 
 public class ElastixManager {
-    // TODO - remove these file deafults
-    public String elastixDirectory = "C:\\Users\\meechan\\Documents\\elastix-4.9.0-win64";
+
+    public String elastixDirectory;
     public String tmpDir;
     public ElastixParameters.TransformationType transformationType = ElastixParameters.TransformationType.Euler;
     public String bSplineGridSpacing = "50,50,50";
@@ -81,8 +81,7 @@ public class ElastixManager {
     }
 
     private void createElastixParameterFile() {
-        // TODO - actually read the bitdepth form image
-        // TODO - warn  only supporting single channel images here
+        // assume single channel and 8 bit (this is what we currently write all mhd images as)
         Map<Integer, Integer> fixedToMovingChannel = new HashMap<>();
         fixedToMovingChannel.put(1, 1);
         DefaultElastixParametersCreator defaultCreator = new DefaultElastixParametersCreator(
@@ -108,8 +107,7 @@ public class ElastixManager {
         elastixSettings.fixedImageFilePaths = fixedImageFilePaths;
         elastixSettings.movingImageFilePaths = movingImageFilePaths;
         elastixSettings.tmpDir = tmpDir;
-        // TODO - read sensible default for this
-        elastixSettings.numWorkers = 1;
+        elastixSettings.numWorkers = Runtime.getRuntime().availableProcessors();
         elastixSettings.parameterFilePath = parameterFilePath;
         elastixSettings.headless = false;
         elastixSettings.logService = new StderrLogService();
@@ -124,8 +122,7 @@ public class ElastixManager {
         transformixSettings.headless = false;
         transformixSettings.movingImageFilePath = movingImageFilePaths.get(0);
         transformixSettings.logService = new StderrLogService();
-        // TODO - read sensible default for this
-        transformixSettings.numWorkers = 1;
+        transformixSettings.numWorkers = Runtime.getRuntime().availableProcessors();;
         return transformixSettings;
     }
 
@@ -136,16 +133,15 @@ public class ElastixManager {
             int nDimensions = elastixTransform.FixedImageDimension;
             boolean contains = Arrays.stream(supportedTransforms).anyMatch(elastixTransform.Transform::equals);
             if ( contains ) {
-
                 AffineTransform3D bdvTransform = null;
                 switch( elastixTransform.Transform ) {
                     case EULER:
-                        // TODO - scaling stuff - how to fix?
-                        //TODO - throw error forunexepcted dimesnios?
                         if ( nDimensions == 2 ) {
                             bdvTransform = ElastixEuler2DToAffineTransform3D.convert((ElastixEulerTransform2D) elastixTransform);
                         } else if ( nDimensions == 3 ) {
                             bdvTransform = ElastixEuler3DToAffineTransform3D.convert((ElastixEulerTransform3D) elastixTransform);
+                        } else {
+                            throw new UnsupportedOperationException("Unsupported number of image dimensions");
                         }
                         break;
                     case SIMILARITY:
@@ -153,6 +149,8 @@ public class ElastixManager {
                             bdvTransform = ElastixSimilarity2DToAffineTransform3D.convert( (ElastixSimilarityTransform2D) elastixTransform );
                         } else if ( nDimensions == 3 ) {
                             bdvTransform = ElastixSimilarity3DToAffineTransform3D.convert( (ElastixSimilarityTransform3D) elastixTransform );
+                        } else {
+                            throw new UnsupportedOperationException("Unsupported number of image dimensions");
                         }
                         break;
                     case AFFINE:
@@ -160,6 +158,8 @@ public class ElastixManager {
                             bdvTransform = ElastixAffine2DToAffineTransform3D.convert( (ElastixAffineTransform2D) elastixTransform );
                         } else if ( nDimensions == 3 ) {
                             bdvTransform = ElastixAffine3DToAffineTransform3D.convert((ElastixAffineTransform3D) elastixTransform);
+                        } else {
+                            throw new UnsupportedOperationException("Unsupported number of image dimensions");
                         }
                         break;
                 }
@@ -182,8 +182,7 @@ public class ElastixManager {
                 tree.addRegistrationNodeAtLastSelection( registrationNode );
                 transformer.showSource( tree.getLastAddedNode() );
             } else {
-                //TODO - error?
-                IJ.log( "Transform type unsupported in Crosshair!");
+                throw new UnsupportedOperationException("Transform type unsupported in Crosshair!");
             }
         } catch (IOException e) {
             e.printStackTrace();

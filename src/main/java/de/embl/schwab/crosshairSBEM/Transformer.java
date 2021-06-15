@@ -216,11 +216,7 @@ public class Transformer {
     private long[] getSourceVoxelDimensions( BdvStackSource bdvStackSource, int level ) {
 
         Source spimSource = ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
-
-        // TODO - warn doesn't support time series
-        long[] dimensions = new long[3];
-        spimSource.getSource( 0, level ).dimensions( dimensions );
-        return dimensions;
+        return spimSource.getSource( 0, level ).dimensionsAsLongArray();
     }
 
     private int getSourceNumberOfLevels( BdvStackSource bdvStackSource ) {
@@ -310,7 +306,7 @@ public class Transformer {
             }
 
             BdvStackSource stackSource = BdvFunctions.show(transformedSource, BdvOptions.options().addTo(bdv));
-            // TODO - generalise?
+            // TODO - generalise brightness setting?
             stackSource.setDisplayRange(0, 255);
             regNode.setSrc(stackSource);
             currentlyDisplayedNodes.add(regNode);
@@ -425,5 +421,5 @@ public class Transformer {
         }
         return spimSource.getSource( 0, level);
     }
-    
+
 }

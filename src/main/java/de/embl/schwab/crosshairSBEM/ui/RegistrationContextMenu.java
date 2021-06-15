@@ -227,6 +227,7 @@ public class RegistrationContextMenu {
     }
 
     private void saveCurrentStateToJson( String jsonPath ) {
+        // TODO - somehow record which fixed and moving image were used too
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
                 .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )

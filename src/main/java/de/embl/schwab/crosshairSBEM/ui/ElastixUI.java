@@ -86,7 +86,6 @@ public class ElastixUI {
         }
 
         public void setParametersInElastixManager( GenericDialog gd ) {
-            // TODO -make sure no settings persist between runs
             elastixManager.elastixDirectory = gd.getNextString();
             String transformationTypeString = gd.getNextChoice();
 
@@ -113,8 +112,7 @@ public class ElastixUI {
             elastixManager.numIterations = (int) gd.getNextNumber();
             elastixManager.numSpatialSamples = (int) gd.getNextNumber();
             elastixManager.gaussianSmoothingSigmas = gd.getNextString();
-
-
+            elastixManager.finalResampler = gd.getNextChoice();
         }
 
 

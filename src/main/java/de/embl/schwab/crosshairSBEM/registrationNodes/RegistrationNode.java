@@ -13,8 +13,6 @@ public class RegistrationNode {
     // full transform, concatenating this affine to all previous transforms before it
     private AffineTransform3D fullTransform;
 
-    // TODO record fixed and moving image
-
     // holds Bdvstacksource, if node is displayed
     private transient BdvStackSource src;
 

@@ -8,6 +8,7 @@ import de.embl.schwab.crosshairSBEM.registrationNodes.BigWarpRegistrationNode;
 import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.ui.BigWarpUI;
 import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
+import ij.IJ;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
@@ -26,8 +27,7 @@ public class BigWarpManager {
         this.transformer = transformer;
     }
 
-    // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
-    // TODO - make sure it can open from an existing transformed source, and add on top
+    // TODO - would be nice if closing bigwarp also closed the little crosshair panel
 
     public void openBigwarpAtSelectedNode( String transformName ) {
         this.transformName = transformName;
@@ -60,14 +60,15 @@ public class BigWarpManager {
     }
 
     public void exportBigWarpToCrosshair() {
-        // TODO - deal with if fixed/moving same way around, or needs to be swapped
-        // TODO - check if type of transform is supported i.e. no thin plate splines!
-        // TODO - concatenate the chain of transforms
-        BigWarpRegistrationNode bigWarpRegistrationNode = new BigWarpRegistrationNode( bw, transformName );
-        RegistrationTree tree = transformer.getUi().getTree();
+        if ( !bw.getTransformType().equals("Thin Plate Spline") ) {
+            BigWarpRegistrationNode bigWarpRegistrationNode = new BigWarpRegistrationNode(bw, transformName);
+            RegistrationTree tree = transformer.getUi().getTree();
 
-        tree.addRegistrationNodeAtLastSelection( bigWarpRegistrationNode );
-        transformer.showSource( tree.getLastAddedNode() );
+            tree.addRegistrationNodeAtLastSelection(bigWarpRegistrationNode);
+            transformer.showSource(tree.getLastAddedNode());
+        } else {
+            IJ.log("Stopping... Unsupported transform type: " + bw.getTransformType() );
+        }
     }
 
     public Point getViewerFrameQLocation() {
