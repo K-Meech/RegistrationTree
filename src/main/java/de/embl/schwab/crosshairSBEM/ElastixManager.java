@@ -191,12 +191,22 @@ public class ElastixManager {
         }
     }
 
-    public Integer downsampleFixedImage() {
-        return new DownsamplingUI( transformer.getDownsampler() ).chooseSourceLevel(Transformer.ImageType.FIXED);
+    public Integer downsampleFixedImage( String fixedImageCropName ) {
+        if ( fixedImageCropName == null ) {
+            return new DownsamplingUI(transformer.getDownsampler()).chooseSourceLevel(Transformer.ImageType.FIXED);
+        } else {
+            return new DownsamplingUI(transformer.getDownsampler()).chooseSourceLevel(
+                    Transformer.ImageType.FIXED, fixedImageCropName);
+        }
     }
 
-    public Integer downsampleMovingImage() {
-        return new DownsamplingUI( transformer.getDownsampler() ).chooseSourceLevel(Transformer.ImageType.MOVING);
+    public Integer downsampleMovingImage( String movingImageCropName ) {
+        if ( movingImageCropName == null ) {
+            return new DownsamplingUI(transformer.getDownsampler()).chooseSourceLevel(Transformer.ImageType.MOVING);
+        } else {
+            return new DownsamplingUI(transformer.getDownsampler()).chooseSourceLevel(Transformer.ImageType.MOVING,
+                    movingImageCropName);
+        }
     }
 
     public String cropFixedImage() {

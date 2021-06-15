@@ -11,9 +11,6 @@ public class ElastixUI {
 
     private ElastixManager elastixManager;
 
-        // TODO - make it optional whether to overwrite images
-        // Keep elastix metadata from all runs i.e. elastixparameters an transformix files
-
         public ElastixUI( ElastixManager elastixManager ) {
             this.elastixManager = elastixManager;
             createElastixParameterDialog();
@@ -69,7 +66,7 @@ public class ElastixUI {
                 Integer movingLevel = 0;
                 // downsample fixed image
                 if ( gd.getNextBoolean() ) {
-                    fixedLevel = elastixManager.downsampleFixedImage();
+                    fixedLevel = elastixManager.downsampleFixedImage( fixedCropName );
                     if ( fixedLevel == null ) {
                         return;
                     }
@@ -77,7 +74,7 @@ public class ElastixUI {
 
                 // downsample moving image
                 if ( gd.getNextBoolean() ) {
-                    movingLevel = elastixManager.downsampleMovingImage();
+                    movingLevel = elastixManager.downsampleMovingImage( movingCropName );
                     if ( movingLevel == null ) {
                         return;
                     }
