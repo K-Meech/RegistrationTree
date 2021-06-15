@@ -6,6 +6,8 @@ import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
 import de.embl.cba.elastixwrapper.commandline.settings.TransformixSettings;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.DefaultElastixParametersCreator;
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
+import de.embl.schwab.crosshairSBEM.mhd.MhdHeader;
+import de.embl.schwab.crosshairSBEM.mhd.MhdHeaderParser;
 import de.embl.schwab.crosshairSBEM.registrationNodes.ElastixRegistrationNode;
 import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.ui.CropperUI;
@@ -306,33 +308,50 @@ public class ElastixManager {
         AffineTransform3D fullTransform = transformer.getUi().getTree().getLastSelectedNode().getFullTransform();
         fullTransform = compensateForCrop( fixedCropName, movingCropName, fixedLevel, movingLevel, fullTransform, CropCompensateDirection.ToElastix );
 
-        ImagePlus fixedImage = transformer.getExporter().getLastFixedImageWritten();
-        Double[] voxelSpacingsMillimeter = new Double[3];
-        voxelSpacingsMillimeter[0] = fixedImage.getCalibration().pixelWidth;
-        voxelSpacingsMillimeter[1] = fixedImage.getCalibration().pixelHeight;
-        voxelSpacingsMillimeter[2] = fixedImage.getCalibration().pixelDepth;
-
-        // TODO - warn only works with 3D, no time
-        Integer[] dimensionsPixels = new Integer[3];
-        for (int i = 0; i<3; i++) {
-            dimensionsPixels[i] = fixedImage.getDimensions()[i];
+        File fixedImageFile;
+        if ( fixedCropName != null ) {
+            fixedImageFile = new File( tmpDir,
+                    transformer.getExporter().makeImageName(Transformer.ImageType.FIXED, fixedLevel, fixedCropName) + ".mhd" );
+        } else {
+            fixedImageFile = new File( tmpDir,
+                    transformer.getExporter().makeImageName(Transformer.ImageType.FIXED, fixedLevel ) + ".mhd" );
         }
 
-        int bitDepth = fixedImage.getBitDepth();
+        if ( fixedImageFile.exists() ) {
+            MhdHeader header = new MhdHeaderParser( fixedImageFile.getAbsolutePath() ).parseHeader();
 
-        // We write directly with whatever spatial units are currently used. No conversion to mm.
-        // Elastix will assume they are in mm, but this is no problem as long as all images use the same units
-        // and we don't do any scaling on saving and loading
-        final ElastixAffineTransform3D elastixAffineTransform3D =
-                new BigWarpAffineToElastixAffineTransform3D().convert(
-                        fullTransform,
-                        voxelSpacingsMillimeter,
-                        dimensionsPixels,
-                        bitDepth,
-                        ElastixTransform.FINAL_LINEAR_INTERPOLATOR,
-                        MILLIMETER );
+            if ( header.nDims > 3 ) {
+                IJ.log( "Stopping... Only up to 3 image dimensions is supported.");
+            } else if ( !header.elementType.equals("MET_UCHAR") ) {
+                IJ.log( "Stopping... Only 8-bit images supported" );
+            } else {
+                int bitDepth = 8;
 
-        elastixAffineTransform3D.save( new File(tmpDir, "initialTransform.txt").getAbsolutePath() );
+                Double[] voxelSpacingsMillimeter = new Double[ header.nDims ];
+                for ( int i= 0; i< voxelSpacingsMillimeter.length; i++ ) {
+                    voxelSpacingsMillimeter[i] = header.elementSize[i];
+                }
+
+                Integer[] dimensionsPixels = new Integer[ header.nDims ];
+                for (int i = 0; i < dimensionsPixels.length; i++) {
+                    dimensionsPixels[i] = header.dimSize[i];
+                }
+
+                // We write directly with whatever spatial units are currently used. No conversion to mm.
+                // Elastix will assume they are in mm, but this is no problem as long as all images use the same units
+                // and we don't do any scaling on saving and loading
+                final ElastixAffineTransform3D elastixAffineTransform3D =
+                        new BigWarpAffineToElastixAffineTransform3D().convert(
+                                fullTransform,
+                                voxelSpacingsMillimeter,
+                                dimensionsPixels,
+                                bitDepth,
+                                ElastixTransform.FINAL_LINEAR_INTERPOLATOR,
+                                MILLIMETER);
+
+                elastixAffineTransform3D.save(new File(tmpDir, "initialTransform.txt").getAbsolutePath());
+            }
+        }
     }
 
     public void callElastix() {

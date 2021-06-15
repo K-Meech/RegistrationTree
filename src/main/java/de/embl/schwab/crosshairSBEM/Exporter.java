@@ -14,18 +14,11 @@ public class Exporter {
     private Transformer transformer;
     private Cropper cropper;
 
-    // store this as I need the parameters to
-    private ImagePlus lastFixedImageWritten;
-
     // TODO - check for bad names in all dialogs e.g. spaces
 
     public Exporter( Transformer transformer, Cropper cropper ) {
         this.transformer = transformer;
         this.cropper = cropper;
-    }
-
-    public ImagePlus getLastFixedImageWritten() {
-        return lastFixedImageWritten;
     }
 
     public String makeImageName (Transformer.ImageType imageType, int level) {
@@ -91,10 +84,6 @@ public class Exporter {
 
         String filenameWithExtension = imageName + ".mhd";
         writer.save(imp, tempDir.getAbsolutePath(), filenameWithExtension);
-
-        if ( imageType == Transformer.ImageType.FIXED ) {
-            lastFixedImageWritten = imp;
-        }
     }
 
     private boolean imageExists( String imageName, File tempDir ) {
