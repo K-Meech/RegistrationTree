@@ -7,6 +7,7 @@ import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import de.embl.schwab.crosshairSBEM.Cropper;
 import de.embl.schwab.crosshairSBEM.Transformer;
+import ij.IJ;
 import ij.gui.GenericDialog;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.RealInterval;
@@ -24,6 +25,23 @@ public class CropperUI {
         this.cropper = cropper;
     }
 
+    private String makeNewCrop( Transformer.ImageType imageType ) {
+        String cropName = cropNameDialog( imageType );
+        if ( cropName != null ) {
+            if ( !cropper.cropExists( imageType, cropName ) ) {
+                boolean successfulCrop = cropper.crop(imageType, cropName );
+                if ( !successfulCrop ) {
+                    cropName = null;
+                }
+            } else {
+                IJ.log( "Stopping... That crop name already exists" );
+                cropName = null;
+            }
+        }
+
+        return cropName;
+    }
+
     public String cropDialog( Transformer.ImageType imageType ) {
         String[] currentCrops;
         if (imageType == Transformer.ImageType.FIXED) {
@@ -32,8 +50,8 @@ public class CropperUI {
             currentCrops = cropper.getImageCropNames( Transformer.ImageType.MOVING );
         }
 
+        String cropName = null;
         if (currentCrops.length > 0) {
-
             final GenericDialog gd = new GenericDialog("Choose crop for " + imageType.name() );
 
             String[] choices = new String[currentCrops.length + 1];
@@ -44,24 +62,20 @@ public class CropperUI {
             gd.addChoice("Crop for " + imageType.name(), choices, choices[0]);
             gd.showDialog();
 
+
             if (!gd.wasCanceled()) {
                 int choice = gd.getNextChoiceIndex();
                 if (choice == 0) {
-                    String cropName = cropNameDialog( imageType );
-                    cropper.crop(imageType, cropName );
-                    return cropName;
+                    cropName = makeNewCrop( imageType );
                 } else {
-                    return choices[choice];
+                    cropName = choices[choice];
                 }
-            } else {
-                throw new RuntimeException();
             }
         } else {
-            // TODO - properly handle if window are cnacelled
-            String cropName = cropNameDialog( imageType );
-            cropper.crop(imageType, cropName);
-            return cropName;
+            cropName = makeNewCrop( imageType );
         }
+
+        return cropName;
     }
 
     public String cropNameDialog( Transformer.ImageType imageType ) {

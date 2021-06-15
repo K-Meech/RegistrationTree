@@ -122,7 +122,7 @@ public class Cropper {
 
 
     // TODO - y dim seems integer??
-    public void crop(Transformer.ImageType imageType, String cropName) {
+    public boolean crop(Transformer.ImageType imageType, String cropName) {
         // https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java
         //https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L58
 
@@ -135,6 +135,10 @@ public class Cropper {
             } else {
                 movingImageCrops.put(cropName, result.getInterval());
             }
+
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -237,6 +241,14 @@ public class Cropper {
         }
 
         return new FinalInterval( min, max );
+    }
+
+    public boolean cropExists( Transformer.ImageType imageType, String cropName ) {
+        if ( imageType == Transformer.ImageType.FIXED ) {
+            return fixedImageCrops.containsKey( cropName );
+        } else {
+            return movingImageCrops.containsKey( cropName );
+        }
     }
 
 

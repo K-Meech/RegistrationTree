@@ -191,11 +191,11 @@ public class ElastixManager {
         }
     }
 
-    public int downsampleFixedImage() {
+    public Integer downsampleFixedImage() {
         return new DownsamplingUI( transformer.getDownsampler() ).chooseSourceLevel(Transformer.ImageType.FIXED);
     }
 
-    public int downsampleMovingImage() {
+    public Integer downsampleMovingImage() {
         return new DownsamplingUI( transformer.getDownsampler() ).chooseSourceLevel(Transformer.ImageType.MOVING);
     }
 
