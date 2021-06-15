@@ -21,6 +21,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 
+import static de.embl.schwab.crosshairSBEM.StringUtils.tidyString;
+
 public class RegistrationContextMenu {
 
     // based on https://github.com/bigdataviewer/bigdataviewer-playground/blob/e6b93d7d2ac4cb490a9c2a19b813fbe96e640ea5/src/main/java/sc/fiji/bdvpg/scijava/services/ui/SourceAndConverterPopupMenu.java#L49
@@ -158,21 +160,23 @@ public class RegistrationContextMenu {
 
         if ( !gd.wasCanceled() ) {
             Transformer.TransformType transformType = Transformer.TransformType.valueOf( gd.getNextChoice() );
-            String transformName = gd.getNextString();
+            String transformName = tidyString( gd.getNextString() );
 
-            switch( transformType ) {
-                case BigWarp:
-                    tree.updateLastSelectedNode();
-                    transformer.getBigWarpManager().openBigwarpAtSelectedNode( transformName );
-                    break;
-                case Elastix:
-                    tree.updateLastSelectedNode();
-                    transformer.getElastixManager().openElastix( transformName );
-                    break;
-                case Manual:
-                    break;
-                case AffineString:
-                    break;
+            if ( transformName != null ) {
+                switch (transformType) {
+                    case BigWarp:
+                        tree.updateLastSelectedNode();
+                        transformer.getBigWarpManager().openBigwarpAtSelectedNode(transformName);
+                        break;
+                    case Elastix:
+                        tree.updateLastSelectedNode();
+                        transformer.getElastixManager().openElastix(transformName);
+                        break;
+                    case Manual:
+                        break;
+                    case AffineString:
+                        break;
+                }
             }
         }
     }

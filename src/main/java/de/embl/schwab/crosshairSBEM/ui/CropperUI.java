@@ -17,6 +17,8 @@ import net.imglib2.util.Intervals;
 import java.io.File;
 import java.util.List;
 
+import static de.embl.schwab.crosshairSBEM.StringUtils.tidyString;
+
 public class CropperUI {
 
     private Cropper cropper;
@@ -85,7 +87,7 @@ public class CropperUI {
         gd.showDialog();
 
         if (!gd.wasCanceled()) {
-            return gd.getNextString();
+            return tidyString( gd.getNextString() );
         } else {
             return null;
         }
