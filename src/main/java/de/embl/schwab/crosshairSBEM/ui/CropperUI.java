@@ -57,7 +57,7 @@ public class CropperUI {
             String[] choices = new String[currentCrops.length + 1];
             choices[0] = "Make new crop";
             for (int i = 0; i < currentCrops.length; i++) {
-                choices[i] = currentCrops[i];
+                choices[i + 1] = currentCrops[i];
             }
             gd.addChoice("Crop for " + imageType.name(), choices, choices[0]);
             gd.showDialog();
