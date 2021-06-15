@@ -149,8 +149,8 @@ public class RegistrationContextMenu {
 
     public void addTransformDialog () {
         final GenericDialog gd = new GenericDialog( "Add a new transformation..." );
-        String[] transformTypes = new String[] {Transformer.TransformType.BigWarp.toString(), Transformer.TransformType.Elastix.toString(),
-                Transformer.TransformType.Manual.toString(), Transformer.TransformType.AffineString.toString() };
+        // TODO - add manual or affine string options
+        String[] transformTypes = new String[] {Transformer.TransformType.BigWarp.toString(), Transformer.TransformType.Elastix.toString()};
         gd.addChoice( "Transformation Type", transformTypes, transformTypes[0]);
         gd.addStringField("Transform name", "");
         gd.showDialog();
