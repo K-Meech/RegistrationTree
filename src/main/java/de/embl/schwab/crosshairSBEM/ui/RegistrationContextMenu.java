@@ -5,10 +5,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import de.embl.cba.tables.FileAndUrlUtils;
-import de.embl.schwab.crosshairSBEM.DefaultMutableTreeNodeAdapter;
+import de.embl.schwab.crosshairSBEM.serialise.DefaultMutableTreeNodeAdapter;
 import de.embl.schwab.crosshairSBEM.Transformer;
+import de.embl.schwab.crosshairSBEM.serialise.RealIntervalAdapter;
 import ij.gui.GenericDialog;
 import mpicbg.spim.data.SpimDataException;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
 
@@ -208,6 +210,7 @@ public class RegistrationContextMenu {
     private void loadCurrentStateFromJson( String jsonPath ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
+                .registerTypeAdapter(RealInterval.class, new RealIntervalAdapter())
                 .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter( transformer.getCropper() ) )
                 .setPrettyPrinting()
                 .create();

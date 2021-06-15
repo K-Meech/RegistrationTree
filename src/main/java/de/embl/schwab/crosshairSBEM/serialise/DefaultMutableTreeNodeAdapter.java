@@ -1,6 +1,7 @@
-package de.embl.schwab.crosshairSBEM;
+package de.embl.schwab.crosshairSBEM.serialise;
 
 import com.google.gson.*;
+import de.embl.schwab.crosshairSBEM.Cropper;
 import de.embl.schwab.crosshairSBEM.registrationNodes.BigWarpRegistrationNode;
 import de.embl.schwab.crosshairSBEM.registrationNodes.ElastixRegistrationNode;
 import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
