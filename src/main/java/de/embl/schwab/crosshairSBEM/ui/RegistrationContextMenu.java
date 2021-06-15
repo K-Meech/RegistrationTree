@@ -207,12 +207,14 @@ public class RegistrationContextMenu {
     private void loadCurrentStateFromJson( String jsonPath ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
-                .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter() )
+                .registerTypeAdapter(DefaultMutableTreeNode.class, new DefaultMutableTreeNodeAdapter( transformer.getCropper() ) )
                 .setPrettyPrinting()
                 .create();
 
         try(InputStream inputStream = new FileInputStream( jsonPath );
             JsonReader reader = new JsonReader( new InputStreamReader(inputStream, "UTF-8")) ) {
+
+            transformer.removeAllCurrentSources();
             DefaultMutableTreeNode newTopNode = gson.fromJson(reader, DefaultMutableTreeNode.class);
 
             DefaultTreeModel treeModel = (DefaultTreeModel) tree.tree.getModel();

@@ -13,7 +13,13 @@ import java.util.Iterator;
 // based on https://stackoverflow.com/questions/53997112/how-to-serialize-defaultmutabletreenode-java-to-json
 public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMutableTreeNode>, JsonDeserializer<DefaultMutableTreeNode> {
 
+    private Cropper cropper;
+
     public DefaultMutableTreeNodeAdapter() {
+    }
+
+    public DefaultMutableTreeNodeAdapter( Cropper cropper ) {
+        this.cropper = cropper;
     }
 
     @Override
@@ -23,6 +29,9 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
         Iterator<String> keys = jobject.keySet().iterator();
         DefaultMutableTreeNode node = new DefaultMutableTreeNode();
 
+        // remove any old crops, and replace with those read from the file
+        cropper.removeAllCrops();
+
         while (keys.hasNext()) {
             switch (keys.next()) {
                 case "allowsChildren":
@@ -31,8 +40,17 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
                 case "userObject":
                     JsonObject userObject = jobject.get("userObject").getAsJsonObject();
                     if ( userObject.has("elastixParameters")) {
-                        node.setUserObject(jsonDeserializationContext.deserialize(
-                                userObject, ElastixRegistrationNode.class));
+                        ElastixRegistrationNode elastixNode = jsonDeserializationContext.deserialize(
+                                userObject, ElastixRegistrationNode.class);
+                        node.setUserObject( elastixNode );
+                        if ( elastixNode.fixedCrop != null && elastixNode.fixedCrop.size() > 0 ) {
+                            cropper.addFixedImageCrops( elastixNode.fixedCrop );
+                        }
+
+                        if ( elastixNode.movingCrop != null && elastixNode.movingCrop.size() > 0 ) {
+                            cropper.addMovingImageCrops( elastixNode.movingCrop );
+                        }
+
                     } else if ( userObject.has("movingLandmarks") ) {
                         node.setUserObject(jsonDeserializationContext.deserialize(
                                 userObject, BigWarpRegistrationNode.class));

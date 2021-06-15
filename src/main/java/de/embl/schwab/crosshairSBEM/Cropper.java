@@ -58,6 +58,27 @@ public class Cropper {
         }
     }
 
+    public void setFixedImageCrops(Map<String, RealInterval> fixedImageCrops) {
+        this.fixedImageCrops = fixedImageCrops;
+    }
+
+    public void addFixedImageCrops(Map<String, RealInterval> fixedImageCrops) {
+        this.fixedImageCrops.putAll( fixedImageCrops );
+    }
+
+    public void setMovingImageCrops(Map<String, RealInterval> movingImageCrops) {
+        this.movingImageCrops = movingImageCrops;
+    }
+
+    public void addMovingImageCrops(Map<String, RealInterval> movingImageCrops) {
+        this.movingImageCrops.putAll( movingImageCrops );
+    }
+
+    public void removeAllCrops() {
+        this.fixedImageCrops = new HashMap<>();
+        this.movingImageCrops = new HashMap<>();
+    }
+
     // rounded to nearest full voxel at full-resolution
     public Interval getImageCropIntervalVoxelSpace(Transformer.ImageType imageType, String name ) {
             return getVoxelInterval( name, imageType, 0);

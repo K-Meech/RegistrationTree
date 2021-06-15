@@ -74,7 +74,6 @@ public class Transformer {
     private Exporter exporter;
 
     private ViewSpace viewSpace = ViewSpace.FIXED;
-    // private ViewSpace viewSpace = ViewSpace.MOVING;
 
     BdvHandle bdv;
 
@@ -364,6 +363,14 @@ public class Transformer {
             regNode.getSrc().removeFromBdv();
             regNode.setSrc(null);
             currentlyDisplayedNodes.remove(regNode);
+        }
+    }
+
+    public void removeAllCurrentSources() {
+        // make new arraylist, otherwise we are modifying the list as we iterate through it
+        ArrayList<RegistrationNode> currentNodes = new ArrayList<>( currentlyDisplayedNodes );
+        for ( RegistrationNode regNode: currentNodes ) {
+            removeSource( regNode );
         }
     }
 
