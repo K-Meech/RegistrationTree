@@ -15,7 +15,6 @@ import de.embl.schwab.crosshairSBEM.ui.DownsamplingUI;
 import de.embl.schwab.crosshairSBEM.ui.ElastixUI;
 import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import ij.IJ;
-import ij.ImagePlus;
 import itc.converters.*;
 import itc.transforms.elastix.*;
 import net.imglib2.RealInterval;

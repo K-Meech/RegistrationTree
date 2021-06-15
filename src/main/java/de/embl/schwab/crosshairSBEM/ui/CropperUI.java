@@ -1,21 +1,9 @@
 package de.embl.schwab.crosshairSBEM.ui;
 
-import bdv.tools.boundingbox.BoxSelectionOptions;
-import bdv.tools.boundingbox.TransformedRealBoxSelectionDialog;
-import bdv.util.BdvFunctions;
-import bdv.viewer.Source;
-import bdv.viewer.SourceAndConverter;
 import de.embl.schwab.crosshairSBEM.Cropper;
 import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.IJ;
 import ij.gui.GenericDialog;
-import net.imglib2.FinalRealInterval;
-import net.imglib2.RealInterval;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
-
-import java.io.File;
-import java.util.List;
 
 import static de.embl.schwab.crosshairSBEM.StringUtils.tidyString;
 

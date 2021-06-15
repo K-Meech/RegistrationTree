@@ -2,9 +2,6 @@ package de.embl.schwab.crosshairSBEM;
 
 import ij.IJ;
 
-import javax.swing.*;
-import java.awt.*;
-
 public class StringUtils {
     public static String tidyString( String string ) {
         string = string.trim();

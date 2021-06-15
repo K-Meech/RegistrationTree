@@ -14,8 +14,6 @@ public class Exporter {
     private Transformer transformer;
     private Cropper cropper;
 
-    // TODO - check for bad names in all dialogs e.g. spaces
-
     public Exporter( Transformer transformer, Cropper cropper ) {
         this.transformer = transformer;
         this.cropper = cropper;
@@ -36,12 +34,6 @@ public class Exporter {
         // TODO - warn that time series are not supported
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
         Interval voxelCropInterval = cropper.getImageCropIntervalVoxelSpace( imageType, cropName, level );
-
-        // NOT necessary??? As now we use a voxel interval
-        // same as big data processor here: https://github.com/bigdataprocessor/bigdataprocessor2/blob/c3853cd56f8352749a81791f547c63816319a0bd/src/main/java/de/embl/cba/bdp2/process/crop/CropDialog.java#L89
-        // i.e. get voxel size at that level, and use it to get a voxel interval
-        // double[] downsampledVoxelSize = transformer.getSourceVoxelSize( imageType, level );
-        // Interval voxelCropInterval = toVoxelInterval( cropInterval, downsampledVoxelSize );
 
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
@@ -89,7 +81,5 @@ public class Exporter {
     private boolean imageExists( String imageName, File tempDir ) {
         return new File(tempDir, imageName + ".mhd").exists();
     }
-
-
 
 }

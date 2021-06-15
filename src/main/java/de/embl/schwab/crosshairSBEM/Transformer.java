@@ -27,7 +27,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -299,32 +298,6 @@ public class Transformer {
         return new RenamableSource( transformedSource, regNode.getName() );
     }
 
-    private void addViewTransform( SpimData spimData, AffineTransform3D affine ) {
-        ViewTransform newViewTransform = new ViewTransformAffine("previous_transforms", affine);
-        spimData.getViewRegistrations().getViewRegistrationsOrdered().get(0).preconcatenateTransform( newViewTransform );
-        spimData.getViewRegistrations().getViewRegistrationsOrdered().get(0).updateModel();
-    }
-
-    // Affine is from registration program i.e. defined as fixed to moving space
-    // based on https://github.com/bigdataviewer/bigdataviewer-playground/blob/e6b93d7d2ac4cb490a9c2a19b813fbe96e640ea5/src/main/java/sc/fiji/bdvpg/sourceandconverter/transform/SourceTransformHelper.java#L249
-    public SpimData getSpimData( ImageType imageType, AffineTransform3D affine ) {
-        SpimData spimData = null;
-        try {
-            if ( imageType == ImageType.FIXED ) {
-                spimData = new XmlIoSpimData().load( fixedImage.getAbsolutePath() );
-                addViewTransform(spimData, affine);
-            } else {
-                spimData = new XmlIoSpimData().load( movingImage.getAbsolutePath() );
-                addViewTransform(spimData, affine.inverse());
-            }
-        } catch (SpimDataException e) {
-            e.printStackTrace();
-        }
-
-        // TODO - warn time not supported
-        return spimData;
-    }
-
     // Affine is from registration program i.e. defined as fixed to moving space
     public void showSource( RegistrationNode regNode ) {
         if ( regNode.getSrc() == null ) {
@@ -452,10 +425,5 @@ public class Transformer {
         }
         return spimSource.getSource( 0, level);
     }
-
-    public static void main( String[] args )
-    {
-    }
-
-
+    
 }

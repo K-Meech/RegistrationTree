@@ -24,11 +24,9 @@ public class BigWarpUI {
         JFrame menu = new JFrame();
         menu.addWindowListener( createWindowListener() );
         menu.setTitle( "Crosshair - Bigwarp menu");
-        // menu.getContentPane().setLayout( new BoxLayout(menu.getContentPane(), BoxLayout.Y_AXIS ) );
         menu.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 
         JPanel panel = new JPanel();
-        // panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
         panel.setBorder( BorderFactory.createEmptyBorder(0, 10, 10, 10) );
         JButton exportCrosshairButton = getButton( "export current transform to Crosshair", new Dimension( 300, TEXT_FIELD_HEIGHT ));
         exportCrosshairButton.setBackground( new Color(240, 128, 128));

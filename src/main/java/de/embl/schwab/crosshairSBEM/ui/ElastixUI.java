@@ -2,10 +2,7 @@ package de.embl.schwab.crosshairSBEM.ui;
 
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.crosshairSBEM.ElastixManager;
-import de.embl.schwab.crosshairSBEM.Transformer;
 import ij.gui.GenericDialog;
-
-import java.io.File;
 
 public class ElastixUI {
 

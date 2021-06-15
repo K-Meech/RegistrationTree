@@ -10,7 +10,6 @@ import de.embl.schwab.crosshairSBEM.ui.BigWarpUI;
 import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
-import net.imglib2.realtransform.AffineTransform3D;
 import org.janelia.utility.ui.RepeatingReleasedEventsFixer;
 
 import java.awt.*;
@@ -18,8 +17,6 @@ import java.io.File;
 
 public class BigWarpManager {
 
-    private SpimData movingSource;
-    private SpimData fixedSource;
     private BigWarp bw;
     private Transformer transformer;
 
@@ -29,12 +26,8 @@ public class BigWarpManager {
         this.transformer = transformer;
     }
 
-    public void openBigwarp( String transformName ) {
-        this.transformName = transformName;
-        openBigwarp( transformer.getSpimData(Transformer.ImageType.MOVING),
-                transformer.getSpimData(Transformer.ImageType.FIXED),
-                transformer.getSourcePath(Transformer.ImageType.MOVING) );
-    }
+    // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
+    // TODO - make sure it can open from an existing transformed source, and add on top
 
     public void openBigwarpAtSelectedNode( String transformName ) {
         this.transformName = transformName;
@@ -44,15 +37,7 @@ public class BigWarpManager {
         openBigWarp( movingSource, fixedSource, transformer.getSourcePath(Transformer.ImageType.MOVING) );
     }
 
-    private void openBigwarp ( SpimData movingSource, SpimData fixedSource, String movingSourcePath ) {
-        // TODO - would be nice if clsoing bigwarp also closed the little crosshair panel
-        // TODO - make sure it can open from an existing transformed source, and add on top
-            (new RepeatingReleasedEventsFixer()).install();
-            BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSource, fixedSource);
-            openBigwarp( bigWarpData, movingSourcePath );
-    }
-
-    private void openBigWarp(Source movingSource, Source fixedSource, String movingSourcePath ) {
+    private void openBigWarp( Source movingSource, Source fixedSource, String movingSourcePath ) {
         (new RepeatingReleasedEventsFixer()).install();
         Source[] fixedSources = new Source[] {fixedSource};
         Source[] movingSources = new Source[]{movingSource};
@@ -66,7 +51,7 @@ public class BigWarpManager {
             bw.getViewerFrameP().getViewerPanel().requestRepaint();
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
             bw.getLandmarkFrame().repaint();
-            bw.setMovingSpimData(movingSource, new File(movingSourcePath));
+            bw.setMovingSpimData( transformer.getSpimData(Transformer.ImageType.MOVING), new File(movingSourcePath) );
             bw.setTransformType("Rotation");
             new BigWarpUI(this);
         } catch (SpimDataException var4) {

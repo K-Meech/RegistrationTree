@@ -95,9 +95,7 @@ public class RegistrationContextMenu {
             addPopupAction("Export to bdv xml", exportListener);
         }
 
-        // print transform (for node) or for whole chain
-
-        // export current chain to xml file (bigstitcher style)
+        // TODO - print transform (for node) or for whole chain
 
         // load tree from json
         ActionListener loadTreeListener = new ActionListener() {
@@ -150,7 +148,6 @@ public class RegistrationContextMenu {
     }
 
     public void addTransformDialog () {
-        // TODO - enforce that all transform names are unique
         final GenericDialog gd = new GenericDialog( "Add a new transformation..." );
         String[] transformTypes = new String[] {Transformer.TransformType.BigWarp.toString(), Transformer.TransformType.Elastix.toString(),
                 Transformer.TransformType.Manual.toString(), Transformer.TransformType.AffineString.toString() };
