@@ -11,13 +11,16 @@ import java.io.File;
 public class RegistererCommand implements Command {
 
     @Parameter
-    public File movingImage;
+    public File movingImageXml;
     @Parameter
-    public File fixedImage;
+    public File fixedImageXml;
+
+    @Parameter(style="directory")
+    public File temporaryDirectory;
 
     @Override
     public void run() {
-            new Transformer( movingImage, fixedImage );
+            new Transformer( movingImageXml, fixedImageXml, temporaryDirectory );
         }
 
     public static void main( String[] args ) {

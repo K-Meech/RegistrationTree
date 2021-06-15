@@ -22,7 +22,6 @@ public class ElastixUI {
         public void createElastixParameterDialog() {
             final GenericDialog gd = new GenericDialog("Elastix settings...");
             gd.addDirectoryField("Elastix installation directory", elastixManager.elastixDirectory);
-            gd.addDirectoryField("Temporary directory", elastixManager.tmpDir);
 
             String[] transformationTypes = new String[]{
                     ElastixParameters.EULER,
@@ -83,7 +82,6 @@ public class ElastixUI {
         public void setParametersInElastixManager( GenericDialog gd ) {
             // TODO -make sure no settings persist between runs
             elastixManager.elastixDirectory = gd.getNextString();
-            elastixManager.tmpDir = gd.getNextString();
             String transformationTypeString = gd.getNextChoice();
 
             switch (transformationTypeString) {

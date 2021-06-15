@@ -9,7 +9,8 @@ public class TestBigWarpConcatenation {
 
         File fixedImage = new File("C:\\Users\\meechan\\Documents\\sample_register_images\\different_xml_scales\\mri-stack.xml");
         File movingImage = new File("C:\\Users\\meechan\\Documents\\sample_register_images\\different_xml_scales\\rotated-scaled.xml");
-        Transformer transformer = new Transformer( movingImage, fixedImage );
+        File tmpDir = new File("C:\\Users\\meechan\\Documents\\temp\\crosshairElastixTesting");
+        Transformer transformer = new Transformer( movingImage, fixedImage, tmpDir );
 
         AffineTransform3D bigWarp1 = new AffineTransform3D();
         bigWarp1.set(0.9835340870089452, -0.1807227149294747, 0.0, -30.54048474543523, 0.1807227149294747, 0.9835340870089452, -0.0, -128.57652045077538, -0.0, 0.0, 0.9999999999999998, -12.999999999999991);

@@ -181,21 +181,6 @@ public class Cropper {
                 sourceVoxelDimensions[0] - 1, sourceVoxelDimensions[1] - 1, sourceVoxelDimensions[2] - 1);
     }
 
-    public boolean doesCropExist( String cropName, Transformer.ImageType imageType, String dir ) {
-
-        boolean cropInList = false;
-        if ( imageType == Transformer.ImageType.FIXED ) {
-            cropInList = fixedImageCrops.containsKey( cropName );
-        } else {
-            cropInList = movingImageCrops.containsKey( cropName );
-        }
-
-        boolean fileExists = new File( dir, imageType.name() + "_" + cropName + ".mhd" ).exists();
-
-        return cropInList && fileExists;
-
-    }
-
     public Interval getVoxelInterval( String cropName, Transformer.ImageType imageType, int level )
     {
         RealInterval voxelCropIntervalFullRes = null;

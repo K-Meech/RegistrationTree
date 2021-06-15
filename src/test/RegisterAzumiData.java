@@ -6,8 +6,9 @@ import java.io.File;
 public class RegisterAzumiData {
     public static void main( String[] args ) {
         RegistererCommand command = new RegistererCommand();
-        command.fixedImage = new File("C:\\Users\\meechan\\Documents\\temp\\azumi_data\\after.xml");
-        command.movingImage = new File("C:\\Users\\meechan\\Documents\\temp\\azumi_data\\before.xml");
+        command.fixedImageXml = new File("C:\\Users\\meechan\\Documents\\temp\\azumi_data\\after.xml");
+        command.movingImageXml = new File("C:\\Users\\meechan\\Documents\\temp\\azumi_data\\before.xml");
+        command.temporaryDirectory = new File( "C:\\Users\\meechan\\Documents\\temp\\crosshairElastixTesting" );
         command.run();
     }
 

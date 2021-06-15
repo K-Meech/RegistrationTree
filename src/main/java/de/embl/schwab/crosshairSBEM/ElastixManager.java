@@ -32,7 +32,7 @@ import static itc.utilities.Units.MILLIMETER;
 public class ElastixManager {
     // TODO - remove these file deafults
     public String elastixDirectory = "C:\\Users\\meechan\\Documents\\elastix-4.9.0-win64";
-    public String tmpDir = "C:\\Users\\meechan\\Documents\\temp\\CrosshairElastixTesting";
+    public String tmpDir;
     public ElastixParameters.TransformationType transformationType = ElastixParameters.TransformationType.Euler;
     public String bSplineGridSpacing = "50,50,50";
     public int numIterations = 1000;
@@ -62,10 +62,16 @@ public class ElastixManager {
 
     private Transformer transformer;
 
-    public ElastixManager( Transformer transformer ) {
+    enum CropCompensateDirection {
+        ToElastix,
+        FromElastix
+    }
+
+    public ElastixManager( Transformer transformer, File tmpDir ) {
         this.fixedImageFilePaths = new ArrayList<>();
         this.movingImageFilePaths = new ArrayList<>();
         this.transformer = transformer;
+        this.tmpDir = tmpDir.getAbsolutePath();
     }
 
     public void openElastix( String transformName ) {
@@ -199,37 +205,39 @@ public class ElastixManager {
         return new CropperUI( transformer.getCropper() ).cropDialog(Transformer.ImageType.MOVING);
     }
 
+    private void writeImage(Transformer.ImageType imageType, String cropName, int level ) {
+        Exporter exporter = transformer.getExporter();
+        File imageFile;
+        if ( cropName == null ) {
+            imageFile = new File( tmpDir, exporter.makeImageName( imageType, level) + ".mhd" );
+            if ( !imageFile.exists() ) {
+                exporter.writeImage( imageType, level, new File(tmpDir));
+            }
+
+        } else {
+            imageFile = new File( tmpDir, exporter.makeImageName( imageType, level, cropName ) + ".mhd" );
+            if ( !imageFile.exists() ) {
+                exporter.writeImage(imageType, cropName, level, new File(tmpDir));
+            }
+        }
+
+        if ( imageType == Transformer.ImageType.FIXED ) {
+            fixedImageFilePaths.add( imageFile.getAbsolutePath());
+        } else {
+            movingImageFilePaths.add( imageFile.getAbsolutePath() );
+        }
+    }
+
     public void writeImages( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
 
         fixedImageFilePaths = new ArrayList<>();
         movingImageFilePaths = new ArrayList<>();
 
-        Exporter exporter = transformer.getExporter();
-        if ( fixedCropName == null ) {
-            exporter.writeImage( Transformer.ImageType.FIXED, fixedLevel, new File(tmpDir) );
-            fixedImageFilePaths.add(
-                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.FIXED, fixedLevel) + ".mhd" ).getAbsolutePath() );
-        } else {
-            exporter.writeImage( Transformer.ImageType.FIXED, fixedCropName, fixedLevel, new File(tmpDir) );
-            fixedImageFilePaths.add(
-                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.FIXED, fixedLevel, fixedCropName) + ".mhd" ).getAbsolutePath() );
-        }
-
-        if ( movingCropName == null ) {
-            exporter.writeImage( Transformer.ImageType.MOVING, movingLevel, new File(tmpDir) );
-            movingImageFilePaths.add(
-                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.MOVING, movingLevel) + ".mhd" ).getAbsolutePath() );
-        } else {
-            exporter.writeImage( Transformer.ImageType.MOVING, movingCropName, movingLevel, new File(tmpDir) );
-            movingImageFilePaths.add(
-                    new File( tmpDir, exporter.makeImageName(Transformer.ImageType.MOVING, movingLevel, movingCropName) + ".mhd" ).getAbsolutePath() );
-        }
+        writeImage( Transformer.ImageType.FIXED, fixedCropName, fixedLevel );
+        writeImage( Transformer.ImageType.MOVING, movingCropName, movingLevel );
     }
 
-    enum CropCompensateDirection {
-        ToElastix,
-        FromElastix
-    }
+
 
     private AffineTransform3D getCropTranslation(Transformer.ImageType imageType, boolean negative, String cropName, int cropLevel ) {
         Cropper cropper = transformer.getCropper();

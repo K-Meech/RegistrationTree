@@ -77,28 +77,23 @@ public class Exporter {
                             RandomAccessibleInterval rai, double[] voxelSize, String imageName, File tempDir ) {
         // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
         // sensibly or just clip?
-        if ( !imageExists( imageName, tempDir) ) {
-            // TODO - seems to be a one off error here if I crop and wack the sliders up to full i.e. image dimensions become
-            // 1 larger on every axis than the actual image
-            // is this because bdv indexes from 0?
-            ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");
-            imp.getCalibration().pixelWidth = voxelSize[0];
-            imp.getCalibration().pixelHeight = voxelSize[1];
-            imp.getCalibration().pixelDepth = voxelSize[2];
+        ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");
+        imp.getCalibration().pixelWidth = voxelSize[0];
+        imp.getCalibration().pixelHeight = voxelSize[1];
+        imp.getCalibration().pixelDepth = voxelSize[2];
 
-            // we keep this as a generic unit name, as otherwise the metaimage writer recognises this and tries
-            // to convert to mm (often in somewhat unexpected ways)
-            imp.getCalibration().setUnit( "physical_units" );
-            System.out.println(imp.getBitDepth());
+        // we keep this as a generic unit name, as otherwise the metaimage writer recognises this and tries
+        // to convert to mm (often in somewhat unexpected ways)
+        imp.getCalibration().setUnit( "physical_units" );
+        System.out.println(imp.getBitDepth());
 
-            MetaImage_Writer writer = new MetaImage_Writer();
+        MetaImage_Writer writer = new MetaImage_Writer();
 
-            String filenameWithExtension = imageName + ".mhd";
-            writer.save(imp, tempDir.getAbsolutePath(), filenameWithExtension);
+        String filenameWithExtension = imageName + ".mhd";
+        writer.save(imp, tempDir.getAbsolutePath(), filenameWithExtension);
 
-            if ( imageType == Transformer.ImageType.FIXED ) {
-                lastFixedImageWritten = imp;
-            }
+        if ( imageType == Transformer.ImageType.FIXED ) {
+            lastFixedImageWritten = imp;
         }
     }
 

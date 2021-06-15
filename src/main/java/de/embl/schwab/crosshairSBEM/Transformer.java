@@ -65,6 +65,7 @@ public class Transformer {
 
     private File fixedImage;
     private File movingImage;
+    private File tempDir;
 
     private Ui ui;
     private BigWarpManager bigWarpManager;
@@ -79,14 +80,15 @@ public class Transformer {
 
     private ArrayList<RegistrationNode> currentlyDisplayedNodes;
 
-    public Transformer( File movingImage, File fixedImage ) {
+    public Transformer( File movingImage, File fixedImage, File tempDir ) {
         try {
             ui = new Ui( this );
             loadSources(movingImage, fixedImage);
             this.fixedImage = fixedImage;
             this.movingImage = movingImage;
+            this.tempDir = tempDir;
             bigWarpManager = new BigWarpManager( this );
-            elastixManager = new ElastixManager( this );
+            elastixManager = new ElastixManager( this, tempDir );
             cropper = new Cropper( this );
             downsampler = new Downsampler( this );
             exporter = new Exporter( this, cropper );

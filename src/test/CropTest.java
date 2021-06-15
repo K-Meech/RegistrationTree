@@ -9,7 +9,8 @@ public class CropTest {
 
         File fixedImage = new File("C:\\Users\\meechan\\Documents\\sample_register_images\\similarity3d\\mri-stack.xml");
         File movingImage = new File("C:\\Users\\meechan\\Documents\\sample_register_images\\similarity3d\\rotated-scaled.xml");
-        Transformer transformer = new Transformer( movingImage, fixedImage );
+        File tempDir = new File( "C:\\Users\\meechan\\Documents\\temp\\crosshairElastixTesting" );
+        Transformer transformer = new Transformer( movingImage, fixedImage, tempDir );
         Cropper cropper = new Cropper( transformer );
         // cropper.createTransformedRealBoxSelectionDialog(Transformer.ImageType.FIXED);
         // transformer.getElastixManager().writeCroppedAndDownsampledImages();
