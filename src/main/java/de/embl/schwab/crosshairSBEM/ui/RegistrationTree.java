@@ -52,12 +52,11 @@ public class RegistrationTree {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     int selRow = tree.getRowForLocation(e.getX(), e.getY());
                     TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-                    tree.setSelectionPath(selPath);
-                    if (selRow>-1){
+                    if ( selPath != null && selRow > -1 ) {
+                        tree.setSelectionPath(selPath);
                         tree.setSelectionRow(selRow);
+                        popup.showPopupMenu(e.getComponent(), e.getX(), e.getY(), isRoot(selPath));
                     }
-
-                    popup.showPopupMenu(e.getComponent(), e.getX(), e.getY(), isRoot( selPath ) );
                 }
             }
         });
