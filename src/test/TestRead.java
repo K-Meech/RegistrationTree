@@ -14,8 +14,8 @@ import java.io.File;
 public class TestRead {
     public static void main( String[] args ) {
 
-        String fixedImagePath = "C:\\Users\\meechan\\Documents\\temp\\testing_new_proj_creator\\blah.xml";
-        String movingImagePath = "C:\\Users\\meechan\\Documents\\sample_register_images\\different_xml_scales\\rotated-scaled.xml";
+        String fixedImagePath = "C:\\Users\\meechan\\Documents\\temp\\azumi_data\\before.xml";
+        String movingImagePath = "C:\\Users\\meechan\\Documents\\temp\\azumi_data\\analysis\\after_registered.xml";
 
 
         try {

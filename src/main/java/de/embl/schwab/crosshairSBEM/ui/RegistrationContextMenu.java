@@ -12,7 +12,7 @@ import ij.gui.GenericDialog;
 import mpicbg.spim.data.SpimDataException;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
-import sc.fiji.bdvpg.services.serializers.AffineTransform3DAdapter;
+import net.imglib2.realtransform.AffineTransform3DAdapter;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
