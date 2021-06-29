@@ -7,6 +7,8 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import java.io.File;
 
+import static de.embl.schwab.crosshairSBEM.SwingUtils.resetCrossPlatformSwingLookAndFeel;
+
 @Plugin(type = Command.class, menuPath = "Plugins>Registerer>Register Bdv Files" )
 public class RegistererCommand implements Command {
 
@@ -20,7 +22,8 @@ public class RegistererCommand implements Command {
 
     @Override
     public void run() {
-            new Transformer( movingImageXml, fixedImageXml, temporaryDirectory );
+        resetCrossPlatformSwingLookAndFeel();
+        new Transformer( movingImageXml, fixedImageXml, temporaryDirectory );
         }
 
     public static void main( String[] args ) {

@@ -52,4 +52,13 @@ public class SwingUtils {
         button.setPreferredSize( dimension );
         return button;
     }
+
+    public static void resetCrossPlatformSwingLookAndFeel() {
+        try {
+            UIManager.setLookAndFeel( UIManager.getCrossPlatformLookAndFeelClassName() );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
