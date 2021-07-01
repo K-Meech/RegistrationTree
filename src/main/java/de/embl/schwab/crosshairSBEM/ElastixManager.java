@@ -1,5 +1,10 @@
 package de.embl.schwab.crosshairSBEM;
 
+import bdv.BigDataViewer;
+import bdv.util.BdvFunctions;
+import bdv.util.BdvStackSource;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import de.embl.cba.elastixwrapper.commandline.ElastixCaller;
 import de.embl.cba.elastixwrapper.commandline.TransformixCaller;
 import de.embl.cba.elastixwrapper.commandline.settings.ElastixSettings;
@@ -17,6 +22,9 @@ import de.embl.schwab.crosshairSBEM.ui.RegistrationTree;
 import ij.IJ;
 import itc.converters.*;
 import itc.transforms.elastix.*;
+import mpicbg.spim.data.SpimData;
+import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.XmlIoSpimData;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.log.StderrLogService;
@@ -40,8 +48,11 @@ public class ElastixManager {
     public int numSpatialSamples = 10000;
     public String gaussianSmoothingSigmas = "10,10,10";
     public String finalResampler = ElastixParameters.FINAL_RESAMPLER_LINEAR;
+    public boolean useFixedMask = false;
+    public String fixedMaskXml;
     public ArrayList<String> fixedImageFilePaths;
     public ArrayList<String> movingImageFilePaths;
+    public ArrayList<String> fixedMaskFilePaths;
 
     // Strings in elastix transform files (Transform "")
     private final String TRANSLATION = "TranslationTransform";
@@ -106,6 +117,9 @@ public class ElastixManager {
         ElastixSettings elastixSettings = new ElastixSettings();
         elastixSettings.fixedImageFilePaths = fixedImageFilePaths;
         elastixSettings.movingImageFilePaths = movingImageFilePaths;
+        if ( fixedMaskFilePaths.size() > 0 ) {
+            elastixSettings.fixedMaskFilePaths = fixedMaskFilePaths;
+        }
         elastixSettings.tmpDir = tmpDir;
         elastixSettings.numWorkers = Runtime.getRuntime().availableProcessors();
         elastixSettings.parameterFilePath = parameterFilePath;
@@ -238,16 +252,52 @@ public class ElastixManager {
         }
     }
 
+    public void writeMask( Transformer.ImageType imageType, String cropName, int level ) throws SpimDataException {
+        if ( imageType == Transformer.ImageType.MOVING ) {
+            throw new UnsupportedOperationException( "Moving masks are not yet supported!");
+        }
+
+        SpimData maskSpimData = new XmlIoSpimData().load( fixedMaskXml );
+        final ArrayList<SourceAndConverter< ? >> sources = new ArrayList<>();
+        BigDataViewer.initSetups( maskSpimData, new ArrayList<>(), sources );
+        Source maskSource = sources.get(0).getSpimSource();
+
+        Exporter exporter = transformer.getExporter();
+        File maskFile;
+        if ( cropName == null ) {
+            maskFile = new File( tmpDir, exporter.makeMaskName( imageType, level) + ".mhd" );
+            if ( !maskFile.exists() ) {
+                exporter.writeMask( imageType, maskSpimData, maskSource, level, new File(tmpDir));
+            }
+
+        } else {
+            maskFile = new File( tmpDir, exporter.makeMaskName( imageType, level, cropName ) + ".mhd" );
+            if ( !maskFile.exists() ) {
+                exporter.writeMask(imageType, maskSpimData, maskSource, cropName, level, new File(tmpDir));
+            }
+        }
+
+        if ( imageType == Transformer.ImageType.FIXED ) {
+            fixedMaskFilePaths.add( maskFile.getAbsolutePath());
+        }
+    }
+
     public void writeImages( String fixedCropName, String movingCropName, int fixedLevel, int movingLevel ) {
 
         fixedImageFilePaths = new ArrayList<>();
         movingImageFilePaths = new ArrayList<>();
+        fixedMaskFilePaths = new ArrayList<>();
 
         writeImage( Transformer.ImageType.FIXED, fixedCropName, fixedLevel );
         writeImage( Transformer.ImageType.MOVING, movingCropName, movingLevel );
+        if ( useFixedMask ) {
+            try {
+                writeMask( Transformer.ImageType.FIXED, fixedCropName, fixedLevel );
+            } catch (SpimDataException e) {
+                e.printStackTrace();
+            }
+        }
     }
-
-
 
     private AffineTransform3D getCropTranslation(Transformer.ImageType imageType, boolean negative, String cropName, int cropLevel ) {
         Cropper cropper = transformer.getCropper();

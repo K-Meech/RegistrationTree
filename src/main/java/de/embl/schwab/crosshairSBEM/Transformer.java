@@ -193,58 +193,23 @@ public class Transformer {
     }
 
     private double[] getSourceVoxelSize( SpimData spimData, BdvStackSource bdvStackSource,  int level ) {
-        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( bdvStackSource, 0 );
+        return getSourceVoxelSize( spimData, getSource(bdvStackSource), level );
+    }
+
+    public double[] getSourceVoxelSize( SpimData spimData, Source spimSource, int level ) {
+        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( spimSource, 0 );
         double[] fullResolutionVoxelSize = getFullResolutionSourceVoxelSize( spimData );
 
         if ( level == 0 ) {
             return fullResolutionVoxelSize;
         } else {
-            long[] downsampledResolutionVoxelDimensions = getSourceVoxelDimensions( bdvStackSource, level );
+            long[] downsampledResolutionVoxelDimensions = getSourceVoxelDimensions( spimSource, level );
             double[] downsampledResolutionVoxelSize = new double[3];
             for ( int i = 0; i< fullResolutionVoxelDimensions.length; i++ ) {
                 downsampledResolutionVoxelSize[i] = fullResolutionVoxelSize[i] *
                         ( (double) fullResolutionVoxelDimensions[i] / (double) downsampledResolutionVoxelDimensions[i] );
             }
             return downsampledResolutionVoxelSize;
-        }
-    }
-
-    private String getSourceUnit( SpimData spimData ) {
-        return spimData.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().unit();
-    }
-
-    private long[] getSourceVoxelDimensions( BdvStackSource bdvStackSource, int level ) {
-
-        Source spimSource = ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
-        return spimSource.getSource( 0, level ).dimensionsAsLongArray();
-    }
-
-    private int getSourceNumberOfLevels( BdvStackSource bdvStackSource ) {
-        Source spimSource = ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
-        return spimSource.getNumMipmapLevels();
-    }
-
-    public Source getSource( ImageType imageType ) {
-        if ( imageType == ImageType.FIXED ) {
-            return ((SourceAndConverter<?>) fixedSource.getSources().get(0) ).getSpimSource();
-        } else {
-            return ((SourceAndConverter<?>) movingSource.getSources().get(0) ).getSpimSource();
-        }
-    }
-
-    public SpimData getSpimData( ImageType imageType ) {
-        if ( imageType == ImageType.FIXED ) {
-            return fixedSpimData;
-        } else {
-            return movingSpimData;
-        }
-    }
-
-    public String getSourcePath( ImageType imageType ) {
-        if ( imageType == ImageType.FIXED ) {
-            return fixedImage.getAbsolutePath();
-        } else {
-            return movingImage.getAbsolutePath();
         }
     }
 
@@ -264,12 +229,17 @@ public class Transformer {
         }
     }
 
-    public String getSourceUnit( ImageType imageType ) {
-        if ( imageType == ImageType.FIXED ) {
-            return getSourceUnit(fixedSpimData);
-        } else {
-            return getSourceUnit(movingSpimData);
-        }
+    private String getSourceUnit( SpimData spimData ) {
+        return spimData.getSequenceDescription().getViewSetupsOrdered().get(0).getVoxelSize().unit();
+    }
+
+    private long[] getSourceVoxelDimensions( BdvStackSource bdvStackSource, int level ) {
+        Source spimSource = getSource( bdvStackSource );
+        return getSourceVoxelDimensions( spimSource, level );
+    }
+
+    private long[] getSourceVoxelDimensions( Source spimSource, int level ) {
+        return spimSource.getSource( 0, level ).dimensionsAsLongArray();
     }
 
     public long[] getSourceVoxelDimensions( ImageType imageType ) {
@@ -277,6 +247,47 @@ public class Transformer {
             return getSourceVoxelDimensions(fixedSource, 0);
         } else {
             return getSourceVoxelDimensions( movingSource, 0 );
+        }
+    }
+
+    private int getSourceNumberOfLevels( BdvStackSource bdvStackSource ) {
+        Source spimSource = ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
+        return spimSource.getNumMipmapLevels();
+    }
+
+    public Source getSource( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSource( fixedSource );
+        } else {
+            return getSource( movingSource );
+        }
+    }
+
+    private Source getSource( BdvStackSource bdvStackSource ) {
+            return ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
+    }
+
+    public SpimData getSpimData( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return fixedSpimData;
+        } else {
+            return movingSpimData;
+        }
+    }
+
+    public String getSourcePath( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return fixedImage.getAbsolutePath();
+        } else {
+            return movingImage.getAbsolutePath();
+        }
+    }
+
+    public String getSourceUnit( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceUnit(fixedSpimData);
+        } else {
+            return getSourceUnit(movingSpimData);
         }
     }
 
@@ -419,6 +430,10 @@ public class Transformer {
         } else {
             spimSource = ((SourceAndConverter<?>) movingSource.getSources().get(0) ).getSpimSource();
         }
+        return getRAI( spimSource, level );
+    }
+
+    public RandomAccessibleInterval getRAI( Source spimSource, int level ) {
         return spimSource.getSource( 0, level);
     }
 

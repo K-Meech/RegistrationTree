@@ -1,8 +1,10 @@
 package de.embl.schwab.crosshairSBEM;
 
+import bdv.viewer.Source;
 import de.embl.cba.metaimage_io.MetaImage_Writer;
 import ij.IJ;
 import ij.ImagePlus;
+import mpicbg.spim.data.SpimData;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.display.imagej.ImageJFunctions;
@@ -28,6 +30,14 @@ public class Exporter {
         return makeImageName( imageType, level ) + "_" + cropName;
     }
 
+    public String makeMaskName( Transformer.ImageType imageType, int level ) {
+        return imageType.name() + "_MASK" + "_" + String.valueOf( level );
+    }
+
+    public String makeMaskName( Transformer.ImageType imageType, int level, String cropName ) {
+        return makeMaskName( imageType, level ) + "_" + cropName;
+    }
+
     public void writeImage(Transformer.ImageType imageType, String cropName, int level, File tempDir ) {
         // export stuff https://github.com/tischi/imagej-utils/blob/9d29c1dbb5bfde784f964e29956877d2d4ddc915/src/main/java/de/embl/cba/bdv/utils/export/BdvRealSourceToVoxelImageExporter.java#L305
         // example of usage https://github.com/tischi/imagej-utils/blob/4ebabd30be230c5fb49674fb78c57cc98d8dab16/src/test/java/explore/ExploreExportSourcesFromBdv.java
@@ -38,13 +48,13 @@ public class Exporter {
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
 
-        writeImage( imageType, crop, transformer.getSourceVoxelSize(imageType, level),
+        writeImage( crop, transformer.getSourceVoxelSize(imageType, level),
                 makeImageName(imageType, level, cropName), tempDir );
     }
 
     public void writeImage( Transformer.ImageType imageType, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( imageType, 0 );
-        writeImage( imageType, rai, transformer.getSourceVoxelSize(imageType, 0),
+        writeImage( rai, transformer.getSourceVoxelSize(imageType, 0),
                 makeImageName( imageType, 0 ), tempDir );
     }
 
@@ -54,12 +64,36 @@ public class Exporter {
 
     public void writeImage( Transformer.ImageType imageType, int level, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
-        writeImage( imageType, rai,  transformer.getSourceVoxelSize(imageType, level),
+        writeImage( rai,  transformer.getSourceVoxelSize(imageType, level),
                 makeImageName( imageType, level ), tempDir );
     }
 
-    private void writeImage(Transformer.ImageType imageType,
-                            RandomAccessibleInterval rai, double[] voxelSize, String imageName, File tempDir ) {
+    // used for writing masks - writes the spim source/data using the crops etc defined for the given image type
+    public void writeMask( Transformer.ImageType imageType, SpimData spimData, Source spimSource,
+                          String cropName, int level, File tempDir ) {
+        RandomAccessibleInterval rai = transformer.getRAI( spimSource, level );
+        // TODO - this currently assumes the original image (e.g. fixed) and the mask have exactly the same pyramid
+        // i.e. exactly the same voxel sizes and dimensions on the same levels. Would be good to generalise this in future.
+        if ( rai.dimensionsAsLongArray() != transformer.getSourceVoxelDimensions( imageType, level ) ){
+            throw new UnsupportedOperationException( "original image and mask do not have the same voxel dimensions at level: " + level );
+        }
+        Interval voxelCropInterval = cropper.getImageCropIntervalVoxelSpace( imageType, cropName, level );
+
+        RandomAccessibleInterval crop =
+                Views.interval( rai, voxelCropInterval );
+
+        writeImage( crop, transformer.getSourceVoxelSize( spimData, spimSource, level ),
+                makeMaskName(imageType, level, cropName), tempDir );
+    }
+
+    public void writeMask( Transformer.ImageType imageType, SpimData spimData, Source spimSource,
+                           int level, File tempDir ) {
+        RandomAccessibleInterval rai = transformer.getRAI( spimSource, level );
+        writeImage( rai,  transformer.getSourceVoxelSize( spimData, spimSource, level ),
+                makeImageName( imageType, level ), tempDir );
+    }
+
+    private void writeImage( RandomAccessibleInterval rai, double[] voxelSize, String imageName, File tempDir ) {
         // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
         // sensibly or just clip?
         ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");

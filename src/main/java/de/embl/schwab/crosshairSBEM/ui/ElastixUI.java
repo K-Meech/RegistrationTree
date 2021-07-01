@@ -2,6 +2,7 @@ package de.embl.schwab.crosshairSBEM.ui;
 
 import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.crosshairSBEM.ElastixManager;
+import ij.IJ;
 import ij.gui.GenericDialog;
 
 public class ElastixUI {
@@ -32,6 +33,8 @@ public class ElastixUI {
             String[] resamplers = new String[]{ElastixParameters.FINAL_RESAMPLER_LINEAR,
                     ElastixParameters.FINAL_RESAMPLER_NEAREST_NEIGHBOR};
             gd.addChoice("Final resampler", resamplers, elastixManager.finalResampler );
+            gd.addCheckbox("Use fixed mask?", false );
+            gd.addFileField( "Fixed mask xml", "" ); // where the fixed mask xml is
             gd.addCheckbox("Crop Fixed Image", true );
             gd.addCheckbox("Crop Moving Image", true);
             gd.addCheckbox( "Downsample Fixed Image", true);
@@ -40,6 +43,11 @@ public class ElastixUI {
 
             if (!gd.wasCanceled()) {
                 setParametersInElastixManager( gd );
+
+                if ( elastixManager.useFixedMask && elastixManager.fixedMaskXml.equals("") ) {
+                    IJ.log( "Stopping... No fixed mask xml supplied" );
+                    return;
+                }
 
                 String fixedCropName = null;
                 String movingCropName = null;
@@ -113,6 +121,8 @@ public class ElastixUI {
             elastixManager.numSpatialSamples = (int) gd.getNextNumber();
             elastixManager.gaussianSmoothingSigmas = gd.getNextString();
             elastixManager.finalResampler = gd.getNextChoice();
+            elastixManager.useFixedMask = gd.getNextBoolean();
+            elastixManager.fixedMaskXml = gd.getNextString();
         }
 
 
