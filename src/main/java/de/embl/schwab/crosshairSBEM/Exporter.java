@@ -68,13 +68,30 @@ public class Exporter {
                 makeImageName( imageType, level ), tempDir );
     }
 
+    private boolean sourcesHaveSameDimensions( RandomAccessibleInterval rai, Transformer.ImageType imageType, int level ) {
+        long[] maskDimensions = rai.dimensionsAsLongArray();
+        long[] imageDimensions = transformer.getSourceVoxelDimensions( imageType, level );
+
+        if ( maskDimensions.length != imageDimensions.length ) {
+            return false;
+        }
+
+        for ( int i=0; i<maskDimensions.length; i++ ) {
+            if ( maskDimensions[i] != imageDimensions[i] ){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     // used for writing masks - writes the spim source/data using the crops etc defined for the given image type
     public void writeMask( Transformer.ImageType imageType, SpimData spimData, Source spimSource,
                           String cropName, int level, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( spimSource, level );
         // TODO - this currently assumes the original image (e.g. fixed) and the mask have exactly the same pyramid
         // i.e. exactly the same voxel sizes and dimensions on the same levels. Would be good to generalise this in future.
-        if ( rai.dimensionsAsLongArray() != transformer.getSourceVoxelDimensions( imageType, level ) ){
+        if ( !sourcesHaveSameDimensions( rai, imageType, level ) ) {
             throw new UnsupportedOperationException( "original image and mask do not have the same voxel dimensions at level: " + level );
         }
         Interval voxelCropInterval = cropper.getImageCropIntervalVoxelSpace( imageType, cropName, level );
@@ -89,6 +106,11 @@ public class Exporter {
     public void writeMask( Transformer.ImageType imageType, SpimData spimData, Source spimSource,
                            int level, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( spimSource, level );
+        // TODO - this currently assumes the original image (e.g. fixed) and the mask have exactly the same pyramid
+        // i.e. exactly the same voxel sizes and dimensions on the same levels. Would be good to generalise this in future.
+        if ( !sourcesHaveSameDimensions( rai, imageType, level ) ) {
+            throw new UnsupportedOperationException( "original image and mask do not have the same voxel dimensions at level: " + level );
+        }
         writeImage( rai,  transformer.getSourceVoxelSize( spimData, spimSource, level ),
                 makeImageName( imageType, level ), tempDir );
     }
