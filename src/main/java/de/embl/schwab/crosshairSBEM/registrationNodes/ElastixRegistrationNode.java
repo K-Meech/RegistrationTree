@@ -16,11 +16,16 @@ public class ElastixRegistrationNode extends RegistrationNode {
     public int fixedDownsamplingLevel;
     public int movingDownsamplingLevel;
 
+    // fixed crop if used
+    public boolean fixedMaskUsed;
+    public String fixedMaskXml;
+
     public ElastixParameters elastixParameters;
     public ElastixTransform elastixTransform;
 
     public ElastixRegistrationNode( Map<String, RealInterval> fixedCrop, Map<String, RealInterval> movingCrop,
-                                    int fixedDownsamplingLevel, int movingDownsamplingLevel, ElastixParameters elastixParameters,
+                                    int fixedDownsamplingLevel, int movingDownsamplingLevel, boolean fixedMaskUsed,
+                                    String fixedMaskXml, ElastixParameters elastixParameters,
                                     ElastixTransform elastixTransform, AffineTransform3D affine,
                                     String transformName ) {
         super( affine, transformName );
@@ -28,6 +33,8 @@ public class ElastixRegistrationNode extends RegistrationNode {
         this.movingCrop = movingCrop;
         this.fixedDownsamplingLevel = fixedDownsamplingLevel;
         this.movingDownsamplingLevel = movingDownsamplingLevel;
+        this.fixedMaskUsed = fixedMaskUsed;
+        this.fixedMaskXml = fixedMaskXml;
         this.elastixParameters = elastixParameters;
         this.elastixTransform = elastixTransform;
     }

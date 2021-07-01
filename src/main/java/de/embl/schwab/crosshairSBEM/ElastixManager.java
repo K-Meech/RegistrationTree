@@ -192,7 +192,7 @@ public class ElastixManager {
                 }
 
                 RegistrationNode registrationNode = new ElastixRegistrationNode(fixedCrop, movingCrop, fixedLevel, movingLevel,
-                        elastixParameters, elastixTransform, bdvTransform, transformName );
+                        useFixedMask, fixedMaskXml, elastixParameters, elastixTransform, bdvTransform, transformName );
                 tree.addRegistrationNodeAtLastSelection( registrationNode );
                 transformer.showSource( tree.getLastAddedNode() );
             } else {
