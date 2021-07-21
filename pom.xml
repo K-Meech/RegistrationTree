@@ -139,5 +139,6 @@
 			<artifactId>bigdataviewer-playground</artifactId>
 			<version>${bigdataviewerPlayground.version}</version>
 		</dependency>
+<!--		Fiji currently ships with an imageJ version that lags behind the pom, so have to explicitly ship 1.53d -->
 	</dependencies>
 </project>
