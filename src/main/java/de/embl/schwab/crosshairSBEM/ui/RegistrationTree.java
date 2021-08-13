@@ -27,6 +27,7 @@ public class RegistrationTree {
 
     TreePath lastSelectedNode;
     TreePath lastAddedNode;
+    TreePath rootNode;
 
     public RegistrationTree( Transformer transformer ) {
         this.transformer = transformer;
@@ -39,6 +40,8 @@ public class RegistrationTree {
         model = new DefaultTreeModel(top);
 
         tree = new JTree(model);
+
+        rootNode = new TreePath( top.getPath() );
 
         RegistrationContextMenu popup =  new RegistrationContextMenu(this, transformer );
 
@@ -96,6 +99,10 @@ public class RegistrationTree {
 
         lastAddedNode = new TreePath(childNode.getPath());
         tree.scrollPathToVisible(lastAddedNode);
+    }
+
+    public void addRegistrationNodeAtRoot( RegistrationNode regNode ) {
+        addRegistrationNode( regNode, rootNode );
     }
 
     private boolean isRoot( TreePath path ) {

@@ -339,6 +339,14 @@ public class Transformer {
         }
     }
 
+    public void hideOriginalImage( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            renamedFixedSource.setActive( false );
+        } else {
+            renamedMovingSource.setActive( false );
+        }
+    }
+
     public void removeSource( RegistrationNode regNode ) {
         BdvStackSource src = regNode.getSrc();
         if ( src != null ) {
