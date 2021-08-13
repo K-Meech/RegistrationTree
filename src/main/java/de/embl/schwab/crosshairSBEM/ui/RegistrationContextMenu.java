@@ -207,7 +207,7 @@ public class RegistrationContextMenu {
         }
     }
 
-    private void loadCurrentStateFromJson( String jsonPath ) {
+    public void loadCurrentStateFromJson( String jsonPath ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(AffineTransform3D.class, new AffineTransform3DAdapter())
                 .registerTypeAdapter(RealInterval.class, new RealIntervalAdapter())

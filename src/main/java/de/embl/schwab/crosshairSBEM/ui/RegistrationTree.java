@@ -24,6 +24,7 @@ public class RegistrationTree {
     JTree tree;
     DefaultTreeModel model;
     Transformer transformer;
+    RegistrationContextMenu popup;
 
     TreePath lastSelectedNode;
     TreePath lastAddedNode;
@@ -43,7 +44,7 @@ public class RegistrationTree {
 
         rootNode = new TreePath( top.getPath() );
 
-        RegistrationContextMenu popup =  new RegistrationContextMenu(this, transformer );
+        popup =  new RegistrationContextMenu(this, transformer );
 
         // Shows Popup on right click
         tree.addMouseListener(new MouseAdapter() {
@@ -139,7 +140,11 @@ public class RegistrationTree {
         return fullTransform;
     }
 
-    public String getTransformNameFromTreePath( TreePath path ) {
+    public RegistrationContextMenu getPopup() {
+        return popup;
+    }
+
+    public String getTransformNameFromTreePath(TreePath path ) {
         DefaultMutableTreeNode lastNodeInPath = (DefaultMutableTreeNode) path.getLastPathComponent();
         String name = ((RegistrationNode) lastNodeInPath.getUserObject()).getName();
         return name;
