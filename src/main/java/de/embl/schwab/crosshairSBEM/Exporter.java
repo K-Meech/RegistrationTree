@@ -7,7 +7,12 @@ import ij.ImagePlus;
 import mpicbg.spim.data.SpimData;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converters;
+import net.imglib2.converter.RealUnsignedByteConverter;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 import java.io.File;
@@ -116,26 +121,41 @@ public class Exporter {
     }
 
     private void writeImage( RandomAccessibleInterval rai, double[] voxelSize, String imageName, File tempDir ) {
-        // TODO - generalise to not just 8-bit? e.g. what happens if I pass a 16bit to this? Does it convert to 8bit
-        // sensibly or just clip?
-        ImagePlus imp = ImageJFunctions.wrapUnsignedByte(rai, "towrite");
-
-        if ( imp.getNFrames() > 1 ) {
-            IJ.log( "Stopping... time series are not supported");
+        // TODO - generalise to any bit depth? Would need to specify different max in the converter i.e. remove
+        // hardcoded 65535
+        Object imageType = Util.getTypeFromInterval(rai);
+        if ( !(imageType instanceof UnsignedByteType) && !(imageType instanceof UnsignedShortType)) {
+            IJ.log("Stopping... only 8-bit or 16-bit images are supported");
         } else {
-            imp.getCalibration().pixelWidth = voxelSize[0];
-            imp.getCalibration().pixelHeight = voxelSize[1];
-            imp.getCalibration().pixelDepth = voxelSize[2];
+            RandomAccessibleInterval<UnsignedByteType> unsignedByteRai;
+            if (imageType instanceof UnsignedByteType) {
+                unsignedByteRai = rai;
+            } else {
+                // rescale 16-bit to 8-bit
+                unsignedByteRai = Converters.convert(
+                        rai,
+                        new RealUnsignedByteConverter(0, 65535),
+                        new UnsignedByteType());
+            }
 
-            // we keep this as a generic unit name, as otherwise the metaimage writer recognises this and tries
-            // to convert to mm (often in somewhat unexpected ways)
-            imp.getCalibration().setUnit("physical_units");
-            System.out.println(imp.getBitDepth());
+            ImagePlus imp = ImageJFunctions.wrapUnsignedByte(unsignedByteRai, "towrite");
 
-            MetaImage_Writer writer = new MetaImage_Writer();
+            if (imp.getNFrames() > 1) {
+                IJ.log("Stopping... time series are not supported");
+            } else {
+                imp.getCalibration().pixelWidth = voxelSize[0];
+                imp.getCalibration().pixelHeight = voxelSize[1];
+                imp.getCalibration().pixelDepth = voxelSize[2];
 
-            String filenameWithExtension = imageName + ".mhd";
-            writer.save(imp, tempDir.getAbsolutePath(), filenameWithExtension);
+                // we keep this as a generic unit name, as otherwise the metaimage writer recognises this and tries
+                // to convert to mm (often in somewhat unexpected ways)
+                imp.getCalibration().setUnit("physical_units");
+
+                MetaImage_Writer writer = new MetaImage_Writer();
+
+                String filenameWithExtension = imageName + ".mhd";
+                writer.save(imp, tempDir.getAbsolutePath(), filenameWithExtension);
+            }
         }
     }
 
