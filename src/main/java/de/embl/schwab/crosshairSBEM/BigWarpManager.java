@@ -34,25 +34,28 @@ public class BigWarpManager {
         RegistrationNode regNode = transformer.getUi().getTree().getSelectedNode();
         Source fixedSource = transformer.createTransformedSource( Transformer.ImageType.FIXED, regNode );
         Source movingSource = transformer.getSource( Transformer.ImageType.MOVING );
-        openBigWarp( movingSource, fixedSource, transformer.getSourcePath(Transformer.ImageType.MOVING) );
+        openBigWarp( movingSource, fixedSource );
     }
 
-    private void openBigWarp( Source movingSource, Source fixedSource, String movingSourcePath ) {
+    private void openBigWarp( Source movingSource, Source fixedSource ) {
         (new RepeatingReleasedEventsFixer()).install();
         Source[] fixedSources = new Source[] {fixedSource};
         Source[] movingSources = new Source[]{movingSource};
         BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSources, fixedSources, new String[] {"moving", "fixed"});
-        openBigwarp( bigWarpData, movingSourcePath );
+        openBigwarp( bigWarpData );
     }
 
-    private void openBigwarp( BigWarp.BigWarpData<?> bigWarpData, String movingSourcePath ) {
+    private void openBigwarp( BigWarp.BigWarpData<?> bigWarpData ) {
         try {
             bw = new BigWarp(bigWarpData, "Big Warp", new ProgressWriterIJ());
             bw.getViewerFrameP().getViewerPanel().requestRepaint();
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
             bw.getLandmarkFrame().repaint();
-            // THIS DOESN'T HAVE TO BE SET - SEEMS TO JUST BE FOR SAVING STUFF DIRECTLY FORM BIGWARP
-            bw.setMovingSpimData( transformer.getSpimData(Transformer.ImageType.MOVING), new File(movingSourcePath) );
+
+            SpimData movingSpimData = transformer.getSpimData(Transformer.ImageType.MOVING);
+            if ( movingSpimData != null ) {
+                bw.setMovingSpimData( movingSpimData, new File(transformer.getSourcePath(Transformer.ImageType.MOVING)) );
+            }
             bw.setTransformType("Rotation");
             new BigWarpUI(this);
         } catch (SpimDataException var4) {

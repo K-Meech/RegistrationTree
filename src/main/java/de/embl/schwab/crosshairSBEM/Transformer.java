@@ -52,18 +52,26 @@ public class Transformer {
         MOVING
     }
 
+    // if loaded from xml only
     private SpimData fixedSpimData;
+    private SpimData movingSpimData;
+    private File fixedImageXml;
+    private File movingImageXml;
+
+    // if loaded directly from Source, or from xml
     private BdvStackSource fixedSource;
     private BdvStackSource renamedFixedSource;
-    private SpimData movingSpimData;
     private BdvStackSource movingSource;
     private BdvStackSource renamedMovingSource;
+
+    private double[] fixedImageFullResolutionVoxelSize;
+    private double[] movingImageFullResolutionVoxelSize;
+    private String fixedImageUnit;
+    private String movingImageUnit;
 
     private TransformedSource<?> fixedTransformedSource;
     private TransformedSource<?> movingTransformedSource;
 
-    private File fixedImage;
-    private File movingImage;
     private File tempDir;
 
     private Ui ui;
@@ -79,29 +87,25 @@ public class Transformer {
 
     private ArrayList<RegistrationNode> currentlyDisplayedNodes;
 
-    public Transformer( File movingImage, File fixedImage, File tempDir ) {
+    public Transformer( File movingImageXml, File fixedImageXml, File tempDir ) {
         try {
-            ui = new Ui( this );
-            loadSources(movingImage, fixedImage);
-            initialiseParameters( fixedImage, movingImage, tempDir );
+            loadSources(movingImageXml, fixedImageXml);
+            initialiseParameters( tempDir );
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
     }
 
-    public Transformer( Source movingImage, Source fixedImage, File movingImageXml, File fixedImageXml, File tempDir ) {
-        try {
-            ui = new Ui( this );
-            loadSources(movingImage, fixedImage, movingImageXml, fixedImageXml);
-            initialiseParameters( fixedImageXml, movingImageXml, tempDir );
-        } catch (SpimDataException e) {
-            e.printStackTrace();
-        }
+    public Transformer( Source movingImage, Source fixedImage, double[] fixedImageFullResolutionVoxelSize,
+                        double[] movingImageFullResolutionVoxelSize, String fixedImageUnit,
+                        String movingImageUnit, File tempDir ) {
+        loadSources( movingImage, fixedImage, fixedImageFullResolutionVoxelSize, movingImageFullResolutionVoxelSize,
+                fixedImageUnit, movingImageUnit );
+        initialiseParameters( tempDir );
     }
 
-    private void initialiseParameters( File fixedImageXml, File movingImageXml, File tempDir ) {
-        this.fixedImage = fixedImageXml;
-        this.movingImage = movingImageXml;
+    private void initialiseParameters( File tempDir ) {
+        ui = new Ui( this );
         this.tempDir = tempDir;
         bigWarpManager = new BigWarpManager( this );
         elastixManager = new ElastixManager( this, tempDir );
@@ -109,6 +113,13 @@ public class Transformer {
         downsampler = new Downsampler( this );
         exporter = new Exporter( this, cropper );
         currentlyDisplayedNodes = new ArrayList<>();
+
+        // position windows
+        Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
+        Point treeLocation = ui.getLocationOnScreen();
+        viewFrame.setLocation(
+                treeLocation.x + ui.getWidth(),
+                treeLocation.y );
     }
 
     public BigWarpManager getBigWarpManager() {
@@ -169,25 +180,32 @@ public class Transformer {
         }
     }
 
-    private void loadSources( Source movingImage, Source fixedImage, File movingImageXml, File fixedImageXml ) throws SpimDataException {
+    private void loadSources( Source movingImage, Source fixedImage, double[] fixedImageFullResolutionVoxelSize,
+                              double[] movingImageFullResolutionVoxelSize, String fixedImageUnit,
+                              String movingImageUnit ) {
         fixedSource = BdvFunctions.show( fixedImage );
         bdv = fixedSource.getBdvHandle();
         movingSource = BdvFunctions.show( movingImage, BdvOptions.options().addTo(bdv) );
 
-        String fixedImagePath = fixedImageXml.getAbsolutePath();
-        String movingImagePath = movingImageXml.getAbsolutePath();
-        fixedSpimData = new XmlIoSpimData().load( fixedImagePath );
-        movingSpimData = new XmlIoSpimData().load( movingImagePath );
+        this.fixedImageFullResolutionVoxelSize = fixedImageFullResolutionVoxelSize;
+        this.fixedImageUnit = fixedImageUnit;
+        this.movingImageFullResolutionVoxelSize = movingImageFullResolutionVoxelSize;
+        this.movingImageUnit = movingImageUnit;
 
         loadSources( fixedSource, movingSource );
     }
 
-    private void loadSources( File movingImage, File fixedImage ) throws SpimDataException {
+    private void loadSources( File movingImageXml, File fixedImageXml ) throws SpimDataException {
+        this.fixedImageXml = fixedImageXml;
+        this.movingImageXml = movingImageXml;
 
-        String fixedImagePath = fixedImage.getAbsolutePath();
-        String movingImagePath = movingImage.getAbsolutePath();
-        fixedSpimData = new XmlIoSpimData().load( fixedImagePath );
-        movingSpimData = new XmlIoSpimData().load( movingImagePath );
+        fixedSpimData = new XmlIoSpimData().load( fixedImageXml.getAbsolutePath() );
+        movingSpimData = new XmlIoSpimData().load( movingImageXml.getAbsolutePath() );
+
+        fixedImageFullResolutionVoxelSize = getFullResolutionSourceVoxelSize( fixedSpimData );
+        movingImageFullResolutionVoxelSize = getFullResolutionSourceVoxelSize( movingSpimData );
+        fixedImageUnit = getSourceUnit( fixedSpimData );
+        movingImageUnit = getSourceUnit( movingSpimData );
 
         fixedSource = BdvFunctions.show(fixedSpimData).get(0);
         bdv = fixedSource.getBdvHandle();
@@ -198,13 +216,6 @@ public class Transformer {
 
     private void loadSources( BdvStackSource fixedSource, BdvStackSource movingSource ) {
         fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
-
-        Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
-        Point treeLocation = ui.getLocationOnScreen();
-        viewFrame.setLocation(
-                treeLocation.x + ui.getWidth(),
-                treeLocation.y );
-
         movingTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) movingSource.getSources().get(0)).getSpimSource();
 
         // for display purposes, wrap into renameable sources, and remove the originals
@@ -223,13 +234,18 @@ public class Transformer {
         return sourceDimensions;
     }
 
-    private double[] getSourceVoxelSize( SpimData spimData, BdvStackSource bdvStackSource,  int level ) {
-        return getSourceVoxelSize( spimData, getSource(bdvStackSource), level );
+    private double[] getSourceVoxelSize( double[] fullResolutionVoxelSize, BdvStackSource bdvStackSource,  int level ) {
+        return getSourceVoxelSize( fullResolutionVoxelSize, getSource(bdvStackSource), level );
     }
 
+    // only used for writing masks! (as currently we don't support loading masks from Source, only from xml)
     public double[] getSourceVoxelSize( SpimData spimData, Source spimSource, int level ) {
-        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( spimSource, 0 );
         double[] fullResolutionVoxelSize = getFullResolutionSourceVoxelSize( spimData );
+        return getSourceVoxelSize( fullResolutionVoxelSize, spimSource, level );
+    }
+
+    public double[] getSourceVoxelSize( double[] fullResolutionVoxelSize, Source spimSource, int level ) {
+        long[] fullResolutionVoxelDimensions = getSourceVoxelDimensions( spimSource, 0 );
 
         if ( level == 0 ) {
             return fullResolutionVoxelSize;
@@ -246,17 +262,17 @@ public class Transformer {
 
     public double[] getSourceVoxelSize( ImageType imageType ) {
         if ( imageType == ImageType.FIXED ) {
-            return getFullResolutionSourceVoxelSize(fixedSpimData);
+            return fixedImageFullResolutionVoxelSize;
         } else {
-            return getFullResolutionSourceVoxelSize(movingSpimData);
+            return movingImageFullResolutionVoxelSize;
         }
     }
 
     public double[] getSourceVoxelSize( ImageType imageType, int level ) {
         if ( imageType == ImageType.FIXED ) {
-            return getSourceVoxelSize( fixedSpimData, fixedSource, level );
+            return getSourceVoxelSize( getSourceVoxelSize( imageType ), fixedSource, level );
         } else {
-            return getSourceVoxelSize( movingSpimData, movingSource, level );
+            return getSourceVoxelSize( getSourceVoxelSize( imageType ), movingSource, level );
         }
     }
 
@@ -308,17 +324,23 @@ public class Transformer {
 
     public String getSourcePath( ImageType imageType ) {
         if ( imageType == ImageType.FIXED ) {
-            return fixedImage.getAbsolutePath();
+            if ( fixedImageXml != null ) {
+                return fixedImageXml.getAbsolutePath();
+            }
         } else {
-            return movingImage.getAbsolutePath();
+            if ( movingImageXml != null ) {
+                return movingImageXml.getAbsolutePath();
+            }
         }
+
+        return null;
     }
 
     public String getSourceUnit( ImageType imageType ) {
         if ( imageType == ImageType.FIXED ) {
-            return getSourceUnit(fixedSpimData);
+            return fixedImageUnit;
         } else {
-            return getSourceUnit(movingSpimData);
+            return movingImageUnit;
         }
     }
 
@@ -415,9 +437,9 @@ public class Transformer {
     public void writeBdvXml(ViewSpace viewSpace, RegistrationNode regNode, String newXmlPath ) throws SpimDataException {
         SpimDataMinimal spimDataMinimal;
         if ( viewSpace == ViewSpace.FIXED ) {
-            spimDataMinimal = new XmlIoSpimDataMinimal().load(movingImage.getAbsolutePath());
+            spimDataMinimal = new XmlIoSpimDataMinimal().load(movingImageXml.getAbsolutePath());
         } else {
-            spimDataMinimal = new XmlIoSpimDataMinimal().load(fixedImage.getAbsolutePath());
+            spimDataMinimal = new XmlIoSpimDataMinimal().load(fixedImageXml.getAbsolutePath());
         }
         // add on top of any existing transforms in the xml file
         Map<ViewId, ViewRegistration> registrations = spimDataMinimal.getViewRegistrations().getViewRegistrations();

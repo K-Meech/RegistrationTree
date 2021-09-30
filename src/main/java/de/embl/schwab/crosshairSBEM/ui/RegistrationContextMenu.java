@@ -85,16 +85,20 @@ public class RegistrationContextMenu {
             };
             addPopupAction("Delete registration node", deleteListener);
 
-            // export in a certain space
-            ActionListener exportListener = new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    new Thread( () -> {
-                        exportDialog();
-                    }).start();
-                }
-            };
-            addPopupAction("Export to bdv xml", exportListener);
+            // If there is no spimdata (i.e. it was loaded directly from Source, and not from an xml), then we can't
+            // export to an xml
+            if ( transformer.getSpimData( Transformer.ImageType.FIXED ) != null ) {
+                // export in a certain space
+                ActionListener exportListener = new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        new Thread(() -> {
+                            exportDialog();
+                        }).start();
+                    }
+                };
+                addPopupAction("Export to bdv xml", exportListener);
+            }
         }
 
         // TODO - print transform (for node) or for whole chain
