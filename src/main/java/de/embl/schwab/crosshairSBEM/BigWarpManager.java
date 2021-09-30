@@ -51,6 +51,7 @@ public class BigWarpManager {
             bw.getViewerFrameP().getViewerPanel().requestRepaint();
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
             bw.getLandmarkFrame().repaint();
+            // THIS DOESN'T HAVE TO BE SET - SEEMS TO JUST BE FOR SAVING STUFF DIRECTLY FORM BIGWARP
             bw.setMovingSpimData( transformer.getSpimData(Transformer.ImageType.MOVING), new File(movingSourcePath) );
             bw.setTransformType("Rotation");
             new BigWarpUI(this);

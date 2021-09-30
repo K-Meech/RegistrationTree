@@ -83,18 +83,32 @@ public class Transformer {
         try {
             ui = new Ui( this );
             loadSources(movingImage, fixedImage);
-            this.fixedImage = fixedImage;
-            this.movingImage = movingImage;
-            this.tempDir = tempDir;
-            bigWarpManager = new BigWarpManager( this );
-            elastixManager = new ElastixManager( this, tempDir );
-            cropper = new Cropper( this );
-            downsampler = new Downsampler( this );
-            exporter = new Exporter( this, cropper );
-            currentlyDisplayedNodes = new ArrayList<>();
+            initialiseParameters( fixedImage, movingImage, tempDir );
         } catch (SpimDataException e) {
             e.printStackTrace();
         }
+    }
+
+    public Transformer( Source movingImage, Source fixedImage, File movingImageXml, File fixedImageXml, File tempDir ) {
+        try {
+            ui = new Ui( this );
+            loadSources(movingImage, fixedImage, movingImageXml, fixedImageXml);
+            initialiseParameters( fixedImageXml, movingImageXml, tempDir );
+        } catch (SpimDataException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void initialiseParameters( File fixedImageXml, File movingImageXml, File tempDir ) {
+        this.fixedImage = fixedImageXml;
+        this.movingImage = movingImageXml;
+        this.tempDir = tempDir;
+        bigWarpManager = new BigWarpManager( this );
+        elastixManager = new ElastixManager( this, tempDir );
+        cropper = new Cropper( this );
+        downsampler = new Downsampler( this );
+        exporter = new Exporter( this, cropper );
+        currentlyDisplayedNodes = new ArrayList<>();
     }
 
     public BigWarpManager getBigWarpManager() {
@@ -155,6 +169,19 @@ public class Transformer {
         }
     }
 
+    private void loadSources( Source movingImage, Source fixedImage, File movingImageXml, File fixedImageXml ) throws SpimDataException {
+        fixedSource = BdvFunctions.show( fixedImage );
+        bdv = fixedSource.getBdvHandle();
+        movingSource = BdvFunctions.show( movingImage, BdvOptions.options().addTo(bdv) );
+
+        String fixedImagePath = fixedImageXml.getAbsolutePath();
+        String movingImagePath = movingImageXml.getAbsolutePath();
+        fixedSpimData = new XmlIoSpimData().load( fixedImagePath );
+        movingSpimData = new XmlIoSpimData().load( movingImagePath );
+
+        loadSources( fixedSource, movingSource );
+    }
+
     private void loadSources( File movingImage, File fixedImage ) throws SpimDataException {
 
         String fixedImagePath = fixedImage.getAbsolutePath();
@@ -163,16 +190,21 @@ public class Transformer {
         movingSpimData = new XmlIoSpimData().load( movingImagePath );
 
         fixedSource = BdvFunctions.show(fixedSpimData).get(0);
-        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
         bdv = fixedSource.getBdvHandle();
+        movingSource = BdvFunctions.show(movingSpimData, BdvOptions.options().addTo(bdv)).get(0);
+
+        loadSources( fixedSource, movingSource );
+    }
+
+    private void loadSources( BdvStackSource fixedSource, BdvStackSource movingSource ) {
+        fixedTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) fixedSource.getSources().get(0)).getSpimSource();
 
         Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
         Point treeLocation = ui.getLocationOnScreen();
         viewFrame.setLocation(
                 treeLocation.x + ui.getWidth(),
-                 treeLocation.y );
+                treeLocation.y );
 
-        movingSource = BdvFunctions.show(movingSpimData, BdvOptions.options().addTo(bdv)).get(0);
         movingTransformedSource = (TransformedSource<?>) ((SourceAndConverter<?>) movingSource.getSources().get(0)).getSpimSource();
 
         // for display purposes, wrap into renameable sources, and remove the originals
@@ -183,7 +215,6 @@ public class Transformer {
         renamedMovingSource.setDisplayRange(0, 255);
         fixedSource.removeFromBdv();
         movingSource.removeFromBdv();
-
     }
 
     private double[] getFullResolutionSourceVoxelSize( SpimData spimData ) {
