@@ -31,7 +31,9 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
         DefaultMutableTreeNode node = new DefaultMutableTreeNode();
 
         // remove any old crops, and replace with those read from the file
-        cropper.removeAllCrops();
+        if ( cropper != null ) {
+            cropper.removeAllCrops();
+        }
 
         while (keys.hasNext()) {
             switch (keys.next()) {
@@ -44,12 +46,14 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
                         ElastixRegistrationNode elastixNode = jsonDeserializationContext.deserialize(
                                 userObject, ElastixRegistrationNode.class);
                         node.setUserObject( elastixNode );
-                        if ( elastixNode.fixedCrop != null && elastixNode.fixedCrop.size() > 0 ) {
-                            cropper.addFixedImageCrops( elastixNode.fixedCrop );
-                        }
+                        if ( cropper != null ) {
+                            if (elastixNode.fixedCrop != null && elastixNode.fixedCrop.size() > 0) {
+                                cropper.addFixedImageCrops(elastixNode.fixedCrop);
+                            }
 
-                        if ( elastixNode.movingCrop != null && elastixNode.movingCrop.size() > 0 ) {
-                            cropper.addMovingImageCrops( elastixNode.movingCrop );
+                            if (elastixNode.movingCrop != null && elastixNode.movingCrop.size() > 0) {
+                                cropper.addMovingImageCrops(elastixNode.movingCrop);
+                            }
                         }
 
                     } else if ( userObject.has("movingLandmarks") ) {
