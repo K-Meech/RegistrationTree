@@ -99,6 +99,28 @@ public class RegistrationContextMenu {
                 };
                 addPopupAction("Export to bdv xml", exportListener);
             }
+
+            // print transform of selected node
+            ActionListener printNodeTransformListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new Thread(() -> {
+                        tree.printTransformOfSelectedRegistrationNode();
+                    }).start();
+                }
+            };
+            addPopupAction("Print transform of this node", printNodeTransformListener);
+
+            // print full transform of selected node
+            ActionListener printFullNodeTransformListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new Thread(() -> {
+                        tree.printFullTransformOfSelectedRegistrationNode();
+                    }).start();
+                }
+            };
+            addPopupAction("Print full transform of path to this node", printFullNodeTransformListener);
         }
 
         // TODO - print transform (for node) or for whole chain

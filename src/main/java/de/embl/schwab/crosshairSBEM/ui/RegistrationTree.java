@@ -2,6 +2,7 @@ package de.embl.schwab.crosshairSBEM.ui;
 
 import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
 import de.embl.schwab.crosshairSBEM.Transformer;
+import ij.IJ;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
@@ -11,6 +12,7 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Arrays;
 import java.util.Enumeration;
 
 public class RegistrationTree {
@@ -177,6 +179,18 @@ public class RegistrationTree {
                 removeNodeAndChildrenFromBdv(node);
             }
         }
+    }
+
+    public void printTransformOfSelectedRegistrationNode() {
+        RegistrationNode node = getSelectedNode();
+        IJ.log("Affine transform (fixed to moving) for node " + node.getName() + ":");
+        IJ.log( Arrays.toString( node.getAffine().getRowPackedCopy() ));
+    }
+
+    public void printFullTransformOfSelectedRegistrationNode() {
+        RegistrationNode node = getSelectedNode();
+        IJ.log("Full affine transform (fixed to moving) for path to node " + node.getName() + ":");
+        IJ.log( Arrays.toString( node.getFullTransform().getRowPackedCopy() ));
     }
 
     private boolean continueDialog() {
