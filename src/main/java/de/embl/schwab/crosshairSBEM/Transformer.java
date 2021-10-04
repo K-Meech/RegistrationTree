@@ -11,6 +11,7 @@ import bdv.util.BdvOptions;
 import bdv.util.BdvStackSource;
 import bdv.viewer.SourceAndConverter;
 import de.embl.schwab.crosshairSBEM.registrationNodes.RegistrationNode;
+import de.embl.schwab.crosshairSBEM.ui.BdvBehaviours;
 import de.embl.schwab.crosshairSBEM.ui.Ui;
 import mpicbg.spim.data.SpimData;
 import mpicbg.spim.data.SpimDataException;
@@ -22,11 +23,15 @@ import mpicbg.spim.data.registration.ViewTransformAffine;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
+import sc.fiji.bdvpg.bdv.navigate.ViewerTransformAdjuster;
+import sc.fiji.bdvpg.bdv.navigate.ViewerTransformChanger;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,6 +39,9 @@ import java.util.Map;
  * Entry point for all transformers
  */
 public class Transformer {
+
+    public static final String FIXEDSOURCENAME = "FIXED";
+    public static final String MOVINGSOURCENAME = "MOVING";
 
     public enum TransformType {
         BigWarp,
@@ -113,6 +121,7 @@ public class Transformer {
         downsampler = new Downsampler( this );
         exporter = new Exporter( this, cropper );
         currentlyDisplayedNodes = new ArrayList<>();
+        new BdvBehaviours(this );
 
         // position windows
         Window viewFrame = SwingUtilities.getWindowAncestor(bdv.getViewerPanel());
@@ -180,6 +189,14 @@ public class Transformer {
         }
     }
 
+    public Map<String, RegistrationNode> getDisplayedNodeNamesToNodes() {
+        Map<String, RegistrationNode> displayedNodeNamesToNodes = new HashMap<>();
+        for ( RegistrationNode node: currentlyDisplayedNodes ) {
+            displayedNodeNamesToNodes.put( node.getName(), node );
+        }
+        return displayedNodeNamesToNodes;
+    }
+
     private void loadSources( Source movingImage, Source fixedImage, double[] fixedImageFullResolutionVoxelSize,
                               double[] movingImageFullResolutionVoxelSize, String fixedImageUnit,
                               String movingImageUnit ) {
@@ -220,9 +237,9 @@ public class Transformer {
 
         // for display purposes, wrap into renameable sources, and remove the originals
         // TODO - generalise brightness
-        renamedFixedSource = BdvFunctions.show( new RenamableSource( getSource(ImageType.FIXED), "FIXED" ), BdvOptions.options().addTo(bdv));
+        renamedFixedSource = BdvFunctions.show( new RenamableSource( getSource(ImageType.FIXED), FIXEDSOURCENAME ), BdvOptions.options().addTo(bdv));
         renamedFixedSource.setDisplayRange(0, 255);
-        renamedMovingSource = BdvFunctions.show( new RenamableSource( getSource(ImageType.MOVING), "MOVING"), BdvOptions.options().addTo(bdv));
+        renamedMovingSource = BdvFunctions.show( new RenamableSource( getSource(ImageType.MOVING), MOVINGSOURCENAME ), BdvOptions.options().addTo(bdv));
         renamedMovingSource.setDisplayRange(0, 255);
         fixedSource.removeFromBdv();
         movingSource.removeFromBdv();
@@ -310,8 +327,20 @@ public class Transformer {
         }
     }
 
+    public SourceAndConverter<?> getSourceAndConverter( ImageType imageType ) {
+        if ( imageType == ImageType.FIXED ) {
+            return getSourceAndConverter( fixedSource );
+        } else {
+            return getSourceAndConverter( movingSource );
+        }
+    }
+
+    private SourceAndConverter<?> getSourceAndConverter( BdvStackSource bdvStackSource ) {
+        return (SourceAndConverter<?>) bdvStackSource.getSources().get(0);
+    }
+
     private Source getSource( BdvStackSource bdvStackSource ) {
-            return ((SourceAndConverter<?>) bdvStackSource.getSources().get(0) ).getSpimSource();
+            return getSourceAndConverter( bdvStackSource ).getSpimSource();
     }
 
     public SpimData getSpimData( ImageType imageType ) {
@@ -415,6 +444,20 @@ public class Transformer {
         for ( RegistrationNode regNode: currentNodes ) {
             removeSource( regNode );
         }
+    }
+
+    private void focus( SourceAndConverter<?> sourceAndConverter ) {
+        final AffineTransform3D transform = new ViewerTransformAdjuster(  bdv, sourceAndConverter ).getTransform();
+        new ViewerTransformChanger( bdv, transform, false, 1000 ).run();
+    }
+
+    public void focus( RegistrationNode node ) {
+        focus( getSourceAndConverter( node.getSrc()) );
+    }
+
+    public void focus( ImageType imageType ) {
+        SourceAndConverter<?> sourceAndConverter = getSourceAndConverter( imageType );
+        focus( sourceAndConverter );
     }
 
     public void toggleViewSpace() {
