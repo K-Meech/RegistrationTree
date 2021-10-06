@@ -19,6 +19,10 @@ import java.io.File;
 
 public class Exporter {
 
+    // NOTE: all images are written with 1, 1, 1 voxel spacing in the mhd file header. This is because all
+    // scaling info is being incorporated directly into the initial transform (this makes it easier to compensate
+    // for any other base transforms in the xml like rotations or translations)
+
     private Transformer transformer;
     private Cropper cropper;
 
@@ -53,13 +57,13 @@ public class Exporter {
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
 
-        writeImage( crop, transformer.getSourceVoxelSize(imageType, level),
+        writeImage( crop, new double[]{1, 1, 1},
                 makeImageName(imageType, level, cropName), tempDir );
     }
 
     public void writeImage( Transformer.ImageType imageType, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( imageType, 0 );
-        writeImage( rai, transformer.getSourceVoxelSize(imageType, 0),
+        writeImage( rai, new double[]{1, 1, 1},
                 makeImageName( imageType, 0 ), tempDir );
     }
 
@@ -69,7 +73,7 @@ public class Exporter {
 
     public void writeImage( Transformer.ImageType imageType, int level, File tempDir ) {
         RandomAccessibleInterval rai = transformer.getRAI( imageType, level );
-        writeImage( rai,  transformer.getSourceVoxelSize(imageType, level),
+        writeImage( rai,  new double[]{1, 1, 1},
                 makeImageName( imageType, level ), tempDir );
     }
 
@@ -104,7 +108,7 @@ public class Exporter {
         RandomAccessibleInterval crop =
                 Views.interval( rai, voxelCropInterval );
 
-        writeImage( crop, transformer.getSourceVoxelSize( spimData, spimSource, level ),
+        writeImage( crop, new double[]{1, 1, 1},
                 makeMaskName(imageType, level, cropName), tempDir );
     }
 
@@ -116,7 +120,7 @@ public class Exporter {
         if ( !sourcesHaveSameDimensions( rai, imageType, level ) ) {
             throw new UnsupportedOperationException( "original image and mask do not have the same voxel dimensions at level: " + level );
         }
-        writeImage( rai,  transformer.getSourceVoxelSize( spimData, spimSource, level ),
+        writeImage( rai,  new double[]{1, 1, 1},
                 makeImageName( imageType, level ), tempDir );
     }
 

@@ -168,17 +168,13 @@ public class Transformer {
     }
 
     public AffineTransform3D getBaseTransform( ImageType imageType ) {
-        AffineTransform3D affine = new AffineTransform3D();
-        Source source = null;
-        if ( imageType == ImageType.FIXED ) {
-            source = getSource( ImageType.FIXED );
+        return getBaseTransform( imageType, 0 );
+    }
 
-        } else {
-            source = getSource( ImageType.MOVING );
-        }
-
-        source.getSourceTransform(0, 0, affine);
-        return affine;
+    public AffineTransform3D getBaseTransform( ImageType imageType, int level ) {
+        AffineTransform3D transform = new AffineTransform3D();
+        getSource( imageType ).getSourceTransform( 0, level, transform );
+        return transform;
     }
 
     public void setTransform( ImageType imageType, AffineTransform3D affine ) {

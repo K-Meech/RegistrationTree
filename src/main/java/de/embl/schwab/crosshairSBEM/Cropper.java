@@ -70,17 +70,17 @@ public class Cropper {
             return getVoxelInterval( name, imageType, 0);
     }
 
+    // rounded to nearest full voxel at resolution level
+    public Interval getImageCropIntervalVoxelSpace(Transformer.ImageType imageType, String name, int level ) {
+        return getVoxelInterval( name, imageType, level );
+    }
+
     public RealInterval getImageCropRealIntervalVoxelSpace(Transformer.ImageType imageType, String name ) {
         if ( imageType == Transformer.ImageType.FIXED ) {
             return fixedImageCrops.get( name );
         } else {
             return movingImageCrops.get( name );
         }
-    }
-
-    // rounded to nearest full voxel at resolution level
-    public Interval getImageCropIntervalVoxelSpace(Transformer.ImageType imageType, String name, int level ) {
-        return getVoxelInterval( name, imageType, level );
     }
 
     public RealInterval getImageCropPhysicalSpace( Transformer.ImageType imageType, String name, int level ) {
@@ -103,6 +103,30 @@ public class Cropper {
         }
 
         return new FinalRealInterval(intervalMin, intervalMax);
+    }
+
+    public AffineTransform3D getCropTranslationPhysicalSpace(Transformer.ImageType imageType, boolean negative,
+                                                              String name, int level ) {
+        RealInterval cropInterval = getImageCropPhysicalSpace( imageType, name, level );
+        return getCropTranslation( cropInterval, negative );
+    }
+
+    public AffineTransform3D getCropTranslationVoxelSpace(Transformer.ImageType imageType, boolean negative,
+                                                           String name, int level ) {
+        RealInterval cropInterval = getImageCropIntervalVoxelSpace( imageType, name, level );
+        return getCropTranslation( cropInterval, negative );
+    }
+
+    private AffineTransform3D getCropTranslation( RealInterval cropInterval, boolean negative ) {
+        double[] cropMin = cropInterval.minAsDoubleArray();
+        if ( negative ) {
+            for (int i = 0; i< cropMin.length; i++) {
+                cropMin[i] = -1*cropMin[i];
+            }
+        }
+        AffineTransform3D translationCrop = new AffineTransform3D();
+        translationCrop.translate( cropMin );
+        return translationCrop;
     }
 
     public boolean crop(Transformer.ImageType imageType, String cropName) {
