@@ -1,4 +1,4 @@
-# Crosshair_SBEM
+# RegistrationTree
 
 Registration for large images stored in a bdv compatible format e.g. bdv.hdf5
 
