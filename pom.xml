@@ -8,12 +8,12 @@
 	</parent>
 
 	<groupId>de.embl.schwab</groupId>
-	<artifactId>crosshair_SBEM</artifactId>
+	<artifactId>registrationTree</artifactId>
 	<version>1.0.3</version>
 
-	<url>https://github.com/mobie/mobie-viewer-fiji</url>
-	<name>MoBIE Fiji Viewer</name>
-	<description>Fiji viewer for MoBIE projects</description>
+	<url>https://github.com/K-Meech/RegistrationTree</url>
+	<name>Registration Tree</name>
+	<description>Build registrations in trees</description>
 	<inceptionYear>2018</inceptionYear>
 	<organization>
 		<name>EMBL</name>
@@ -46,25 +46,25 @@
 	</contributors>
 	<mailingLists>
 		<mailingList>
-			<name>ImageJ Forum</name>
-			<archive>http://forum.imagej.net/</archive>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/</archive>
 		</mailingList>
 	</mailingLists>
 	<scm>
-		<connection>scm:git:git://github.com/K-Meech/Crosshair_SBEM</connection>
-		<developerConnection>scm:git:git@github.com/K-Meech/Crosshair_SBEM</developerConnection>
+		<connection>scm:git:git://github.com/K-Meech/RegistrationTree</connection>
+		<developerConnection>scm:git:git@github.com/K-Meech/RegistrationTree</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/K-Meech/Crosshair_SBEM</url>
+		<url>https://github.com/K-Meech/RegistrationTree</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
-		<url>https://github.com/K-Meech/Crosshair_SBEM/issues</url>
+		<url>https://github.com/K-Meech/RegistrationTree/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>
 	</ciManagement>
 	<properties>
-		<package-name>de.embl.schwab.Crosshair_SBEM</package-name>
+		<package-name>de.embl.schwab.RegistrationTree</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>EMBL</license.copyrightOwners>
 		<scijava.app.directory>C:\Users\meechan\Documents\registerer\Fiji.app</scijava.app.directory>
@@ -81,22 +81,10 @@
 
 
 	</properties>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.19</version>
-				<configuration>
-					<argLine>-Xmx4024m</argLine>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 	<repositories>
 		<repository>
-			<id>imagej.public</id>
-			<url>https://maven.imagej.net/content/groups/public</url>
+			<id>scijava.public</id>
+			<url>https://maven.scijava.org/content/groups/public</url>
 		</repository>
 	</repositories>
 	<dependencies>
