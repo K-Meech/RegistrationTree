@@ -9,8 +9,8 @@ import java.io.File;
 
 import static de.embl.schwab.registrationTree.SwingUtils.resetCrossPlatformSwingLookAndFeel;
 
-@Plugin(type = Command.class, menuPath = "Plugins>Registerer>Register Bdv Files" )
-public class RegistererCommand implements Command {
+@Plugin(type = Command.class, menuPath = "Plugins>RegistrationTree>Register Bdv Files" )
+public class RegistrationCommand implements Command {
 
     @Parameter
     public File movingImageXml;
