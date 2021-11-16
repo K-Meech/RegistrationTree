@@ -4,12 +4,12 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>30.0.0</version>
+		<version>31.1.0</version>
 	</parent>
 
 	<groupId>de.embl.schwab</groupId>
 	<artifactId>registrationTree</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.4</version>
 
 	<url>https://github.com/K-Meech/RegistrationTree</url>
 	<name>Registration Tree</name>
@@ -67,16 +67,16 @@
 		<package-name>de.embl.schwab.RegistrationTree</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>EMBL</license.copyrightOwners>
-		<scijava.app.directory>C:\Users\meechan\Documents\registerer\Fiji.app</scijava.app.directory>
+		<scijava.app.directory>C:\Users\meechan\Documents\RegistrationTreeUpload\Fiji.app</scijava.app.directory>
 		<enforcer.skip>true</enforcer.skip>
 
 		<imagej-utils.version>0.6.4-SNAPSHOT</imagej-utils.version>
 		<metaimage-io.version>1.0.0</metaimage-io.version>
 		<elastixWrapper.version>0.5.1-SNAPSHOT</elastixWrapper.version>
-		<bigdataviewerPlayground.version>0.3.5</bigdataviewerPlayground.version>
-		<bigdataviewer-core.version>10.2.0</bigdataviewer-core.version>
-		<bigdataviewer-vistools.version>1.0.0-beta-28</bigdataviewer-vistools.version>
-		<bigwarp.version>7.0.1</bigwarp.version>
+		<bigdataviewerPlayground.version>0.3.13</bigdataviewerPlayground.version>
+<!--		<bigdataviewer-core.version>10.2.0</bigdataviewer-core.version>-->
+<!--		<bigdataviewer-vistools.version>1.0.0-beta-28</bigdataviewer-vistools.version>-->
+		<bigwarp.version>7.0.4</bigwarp.version>
 		<itc.version>0.1.7-SNAPSHOT</itc.version>
 
 
@@ -101,12 +101,10 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>bigdataviewer-core</artifactId>
-			<version>${bigdataviewer-core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>bigdataviewer-vistools</artifactId>
-			<version>${bigdataviewer-vistools.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>de.embl.cba</groupId>
@@ -128,6 +126,5 @@
 			<artifactId>bigdataviewer-playground</artifactId>
 			<version>${bigdataviewerPlayground.version}</version>
 		</dependency>
-<!--		Fiji currently ships with an imageJ version that lags behind the pom, so have to explicitly ship 1.53d -->
 	</dependencies>
 </project>
