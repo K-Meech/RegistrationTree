@@ -12,3 +12,24 @@ Currently only **affine** registrations are supported.
 Time series and multichannel images are not supported.
 
 Designed for registration of 3D images, but 2D should also be supported (not tested explicitly!)
+
+## Installation
+
+RegistrationTree is a Fiji plugin. If you haven't used Fiji/ImageJ before - you can download it from: https://imagej.net/Fiji  
+If you're using an existing Fiji installation, make sure it is up to date!  
+Go to Help > Update... in the imagej menu, and select Apply Changes.  
+
+### Add the RegistrationTree update site
+Go to Help > Update... in the imagej menu, and select 'Manage update sites'.  
+In the new window that pops up, select 'Add update site'. This will create a new row in the table.
+Fill this row out so it looks like below:  
+
+<img src="https://github.com/K-Meech/RegistrationTree/blob/main/images/update_site.png" width="800">
+
+Then click 'Close'.   
+Then click 'Apply Changes'  
+
+## User guide
+
+A short user guide is provided in the wiki:
+https://github.com/K-Meech/RegistrationTree/wiki
