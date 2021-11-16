@@ -74,7 +74,7 @@ public class RegistrationContextMenu {
                     }).start();
                 }
             };
-            addPopupAction("Delete registration node", deleteListener);
+            addPopupAction("Delete transform node", deleteListener);
 
             // If there is no spimdata (i.e. it was loaded directly from Source, and not from an xml), then we can't
             // export to an xml
