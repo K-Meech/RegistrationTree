@@ -30,11 +30,6 @@ public class DefaultMutableTreeNodeAdapter implements JsonSerializer<DefaultMuta
         Iterator<String> keys = jobject.keySet().iterator();
         DefaultMutableTreeNode node = new DefaultMutableTreeNode();
 
-        // remove any old crops, and replace with those read from the file
-        if ( cropper != null ) {
-            cropper.removeAllCrops();
-        }
-
         while (keys.hasNext()) {
             switch (keys.next()) {
                 case "allowsChildren":

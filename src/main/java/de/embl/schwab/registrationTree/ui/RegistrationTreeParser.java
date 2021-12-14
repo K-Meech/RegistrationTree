@@ -25,6 +25,11 @@ public class RegistrationTreeParser {
                 .setPrettyPrinting()
                 .create();
 
+        // remove any old crops, and replace with those read from the file
+        if ( transformer.getCropper() != null ) {
+            transformer.getCropper().removeAllCrops();
+        }
+
         return parseTreeJson( gson, jsonPath );
     }
 
