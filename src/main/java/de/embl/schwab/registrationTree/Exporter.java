@@ -121,7 +121,7 @@ public class Exporter {
             throw new UnsupportedOperationException( "original image and mask do not have the same voxel dimensions at level: " + level );
         }
         writeImage( rai,  new double[]{1, 1, 1},
-                makeImageName( imageType, level ), tempDir );
+                makeMaskName( imageType, level ), tempDir );
     }
 
     private void writeImage( RandomAccessibleInterval rai, double[] voxelSize, String imageName, File tempDir ) {
