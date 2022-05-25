@@ -62,8 +62,9 @@ public class ElastixManager {
     private ElastixParameters elastixParameters;
     private String transformName;
 
-    // for debugging purposes, if flipped to true it will keep all output files i.e. all transformix file runs
-    private boolean debug = true;
+    // for debugging purposes, if flipped to true it will keep all output files i.e. all transformix file runs.
+    // Useful to check that the saved transformations are correct.
+    public boolean callTransformix = false;
 
 
     // TODO - add back translation support? Doesn't appear to be class in itc converters for this?
@@ -479,7 +480,7 @@ public class ElastixManager {
         createElastixParameterFile();
         new ElastixCaller( createElastixSettings() ).callElastix();
 
-        if ( debug ) {
+        if (callTransformix) {
             callTransformix();
         }
     }

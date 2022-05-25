@@ -9,7 +9,7 @@
 
 	<groupId>de.embl.schwab</groupId>
 	<artifactId>registrationTree</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 
 	<url>https://github.com/K-Meech/RegistrationTree</url>
 	<name>Registration Tree</name>
@@ -67,7 +67,6 @@
 		<package-name>de.embl.schwab.RegistrationTree</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>EMBL</license.copyrightOwners>
-		<scijava.app.directory>C:\Users\meechan\Documents\RegistrationTreeUpload\Fiji.app</scijava.app.directory>
 		<enforcer.skip>true</enforcer.skip>
 
 		<imagej-utils.version>0.6.4-SNAPSHOT</imagej-utils.version>

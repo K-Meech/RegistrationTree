@@ -35,6 +35,7 @@ public class ElastixUI {
             gd.addChoice("Final resampler", resamplers, elastixManager.finalResampler );
             gd.addCheckbox("Use fixed mask?", false );
             gd.addFileField( "Fixed mask xml", "" ); // where the fixed mask xml is
+            gd.addCheckbox( "Write transformed images via transformix? (leave disabled for normal use)", false );
             gd.addCheckbox("Crop Fixed Image", true );
             gd.addCheckbox("Crop Moving Image", true);
             gd.addCheckbox( "Downsample Fixed Image", true);
@@ -123,6 +124,7 @@ public class ElastixUI {
             elastixManager.finalResampler = gd.getNextChoice();
             elastixManager.useFixedMask = gd.getNextBoolean();
             elastixManager.fixedMaskXml = gd.getNextString();
+            elastixManager.callTransformix = gd.getNextBoolean();
         }
 
 
