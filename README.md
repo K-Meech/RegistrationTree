@@ -33,3 +33,7 @@ Then click 'Apply Changes'
 
 A short user guide is provided in the wiki:
 https://github.com/K-Meech/RegistrationTree/wiki
+
+## Cite
+
+If you use RegistrationTree in your work, please cite our [paper on eLife](https://elifesciences.org/articles/80899)
