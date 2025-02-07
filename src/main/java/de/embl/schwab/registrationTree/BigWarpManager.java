@@ -3,6 +3,7 @@ package de.embl.schwab.registrationTree;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.viewer.Source;
 import bigwarp.BigWarp;
+import bigwarp.BigWarpData;
 import bigwarp.BigWarpInit;
 import de.embl.schwab.registrationTree.registrationNodes.BigWarpRegistrationNode;
 import de.embl.schwab.registrationTree.registrationNodes.RegistrationNode;
@@ -41,11 +42,11 @@ public class BigWarpManager {
         (new RepeatingReleasedEventsFixer()).install();
         Source[] fixedSources = new Source[] {fixedSource};
         Source[] movingSources = new Source[]{movingSource};
-        BigWarp.BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSources, fixedSources, new String[] {"moving", "fixed"});
+        BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSources, fixedSources, new String[] {"moving", "fixed"});
         openBigwarp( bigWarpData );
     }
 
-    private void openBigwarp( BigWarp.BigWarpData<?> bigWarpData ) {
+    private void openBigwarp( BigWarpData<?> bigWarpData ) {
         try {
             bw = new BigWarp(bigWarpData, "Big Warp", new ProgressWriterIJ());
             bw.getViewerFrameP().getViewerPanel().requestRepaint();
