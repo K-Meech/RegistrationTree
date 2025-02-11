@@ -40,15 +40,17 @@ public class BigWarpManager {
 
     private void openBigWarp( Source movingSource, Source fixedSource ) {
         (new RepeatingReleasedEventsFixer()).install();
-        Source[] fixedSources = new Source[] {fixedSource};
-        Source[] movingSources = new Source[]{movingSource};
-        BigWarpData<?> bigWarpData = BigWarpInit.createBigWarpData(movingSources, fixedSources, new String[] {"moving", "fixed"});
+
+        BigWarpData bigWarpData = BigWarpInit.initData();
+        BigWarpInit.add(bigWarpData, BigWarpInit.createSources(bigWarpData, movingSource, 0, true));
+        BigWarpInit.add(bigWarpData, BigWarpInit.createSources(bigWarpData, fixedSource, 1, false));
+
         openBigwarp( bigWarpData );
     }
 
     private void openBigwarp( BigWarpData<?> bigWarpData ) {
         try {
-            bw = new BigWarp(bigWarpData, "Big Warp", new ProgressWriterIJ());
+            bw = new BigWarp(bigWarpData, new ProgressWriterIJ());
             bw.getViewerFrameP().getViewerPanel().requestRepaint();
             bw.getViewerFrameQ().getViewerPanel().requestRepaint();
             bw.getLandmarkFrame().repaint();
