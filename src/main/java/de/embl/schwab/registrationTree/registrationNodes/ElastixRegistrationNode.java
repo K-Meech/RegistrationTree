@@ -1,6 +1,6 @@
 package de.embl.schwab.registrationTree.registrationNodes;
 
-import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
+import de.embl.cba.elastix.wrapper.elastix.parameters.ElastixParameters;
 import itc.transforms.elastix.ElastixTransform;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;

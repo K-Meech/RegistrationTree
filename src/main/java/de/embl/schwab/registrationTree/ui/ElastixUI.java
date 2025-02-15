@@ -1,6 +1,6 @@
 package de.embl.schwab.registrationTree.ui;
 
-import de.embl.cba.elastixwrapper.wrapper.elastix.parameters.ElastixParameters;
+import de.embl.cba.elastix.wrapper.elastix.parameters.ElastixParameters;
 import de.embl.schwab.registrationTree.ElastixManager;
 import ij.IJ;
 import ij.gui.GenericDialog;
